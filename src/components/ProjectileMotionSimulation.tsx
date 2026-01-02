@@ -46,7 +46,7 @@ const ProjectileMotionSimulation: React.FC = () => {
 
   // Simulation paused state
   const [isPaused, setIsPaused] = useState<boolean>(false)
-  const [pauseTime, setPauseTime] = useState<number>(0)
+  const [, setPauseTime] = useState<number>(0)
 
   // Simulation state
   const [isPlaying, setIsPlaying] = useState<boolean>(false)
@@ -88,6 +88,7 @@ const ProjectileMotionSimulation: React.FC = () => {
   const [airResistance, setAirResistance] = useState<boolean>(false)
   const [cannonPosition, setCannonPosition] = useState({ x: 0, y: 0 })
   const [targetPosition, setTargetPosition] = useState({ x: 100, y: 0 })
+  const [saveButtonClassName, setSaveButtonClassName] = useState('')
 
   // Color palette for projectile paths
   const colorPalette = [
@@ -205,41 +206,41 @@ const ProjectileMotionSimulation: React.FC = () => {
 
   // Save current projectile to history
   const saveToHistory = useCallback(() => {
-    if (projectilePathRef.current.length === 0) return
+    if (projectilePathRef.current && projectilePathRef.current.length > 0) {
+      const stats = calculateProjectileStats(projectilePathRef.current)
+      const name =
+        newProjectileName || `Projectile ${projectileHistories.length + 1}`
+      const color = selectedColor
 
-    const stats = calculateProjectileStats(projectilePathRef.current)
-    const name =
-      newProjectileName || `Projectile ${projectileHistories.length + 1}`
-    const color = selectedColor
+      const newHistory: ProjectileHistory = {
+        id: Date.now(),
+        name,
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        }),
+        angle,
+        speed: initialSpeed,
+        airResistance,
+        path: [...projectilePathRef.current],
+        color,
+        startX: cannonPosition.x,
+        startY: cannonPosition.y,
+        targetX: targetPosition.x,
+        targetY: targetPosition.y,
+        landingDistance: stats.landingDistance,
+        maxHeight: stats.maxHeight,
+        flightTime: stats.flightTime
+      }
 
-    const newHistory: ProjectileHistory = {
-      id: Date.now(),
-      name,
-      timestamp: new Date().toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      }),
-      angle,
-      speed: initialSpeed,
-      airResistance,
-      path: [...projectilePathRef.current],
-      color,
-      startX: cannonPosition.x,
-      startY: cannonPosition.y,
-      targetX: targetPosition.x,
-      targetY: targetPosition.y,
-      landingDistance: stats.landingDistance,
-      maxHeight: stats.maxHeight,
-      flightTime: stats.flightTime
+      setProjectileHistories((prev) => [newHistory, ...prev])
+      setActiveHistoryId(newHistory.id)
+      setNewProjectileName('')
+      setSelectedColor(
+        colorPalette[(projectileHistories.length + 1) % colorPalette.length]
+      )
     }
-
-    setProjectileHistories((prev) => [newHistory, ...prev])
-    setActiveHistoryId(newHistory.id)
-    setNewProjectileName('')
-    setSelectedColor(
-      colorPalette[(projectileHistories.length + 1) % colorPalette.length]
-    )
   }, [
     angle,
     initialSpeed,
@@ -461,7 +462,7 @@ const ProjectileMotionSimulation: React.FC = () => {
   }
 
   // Get suggested adjustment
-  const getAdjustmentSuggestion = (distance: number) => {
+  const getAdjustmentSuggestion = () => {
     const landingDistance = calculateLandingDistance()
 
     if (landingDistance < targetPosition.x) {
@@ -999,6 +1000,17 @@ const ProjectileMotionSimulation: React.FC = () => {
     return Math.min(100, Math.max(0, baseProbability * velocityFactor))
   }, [projectile, targetPosition, currentSpeed, isPlaying, isPaused])
 
+  useEffect(() => {
+    if (projectilePathRef.current) {
+      const isPathEmpty = projectilePathRef.current.length === 0
+      setSaveButtonClassName(
+        isPathEmpty
+          ? 'bg-gray-700 cursor-not-allowed'
+          : 'bg-green-600 hover:bg-green-700'
+      )
+    }
+  }, [projectilePathRef.current])
+
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6">
       <div className="max-w-7xl mx-auto">
@@ -1047,12 +1059,7 @@ const ProjectileMotionSimulation: React.FC = () => {
               <div className="flex space-x-2">
                 <button
                   onClick={saveToHistory}
-                  disabled={projectilePathRef.current.length === 0}
-                  className={`px-4 py-2 rounded-lg font-medium ${
-                    projectilePathRef.current.length === 0
-                      ? 'bg-gray-700 cursor-not-allowed'
-                      : 'bg-green-600 hover:bg-green-700'
-                  }`}>
+                  className={`px-4 py-2 rounded-lg font-medium ${saveButtonClassName}`}>
                   💾 Save Current
                 </button>
                 {projectileHistories.length > 0 && (
@@ -1106,13 +1113,8 @@ const ProjectileMotionSimulation: React.FC = () => {
                 <div className="flex items-end">
                   <button
                     onClick={saveToHistory}
-                    disabled={projectilePathRef.current.length === 0}
-                    className={`w-full px-4 py-3 rounded-lg font-medium ${
-                      projectilePathRef.current.length === 0
-                        ? 'bg-gray-700 cursor-not-allowed'
-                        : 'bg-green-600 hover:bg-green-700'
-                    }`}>
-                    💾 Save to History
+                    className={`px-4 py-2 rounded-lg font-medium ${saveButtonClassName}`}>
+                    💾 Save Current
                   </button>
                 </div>
               </div>
@@ -1251,7 +1253,7 @@ const ProjectileMotionSimulation: React.FC = () => {
                   <div className="p-4 bg-gray-800 rounded-lg">
                     <div className="text-sm text-gray-400">Suggestion</div>
                     <div className="text-lg mt-2">
-                      {getAdjustmentSuggestion(lastHitDistance)}
+                      {getAdjustmentSuggestion()}
                     </div>
                   </div>
                   <div className="p-4 bg-gray-800 rounded-lg">
@@ -1494,12 +1496,7 @@ const ProjectileMotionSimulation: React.FC = () => {
 
                   <button
                     onClick={saveToHistory}
-                    disabled={projectilePathRef.current.length === 0}
-                    className={`px-4 py-3 rounded-lg font-medium transition-colors ${
-                      projectilePathRef.current.length === 0
-                        ? 'bg-gray-700 cursor-not-allowed'
-                        : 'bg-purple-500 hover:bg-purple-600'
-                    }`}>
+                    className={`px-4 py-2 rounded-lg font-medium ${saveButtonClassName}`}>
                     💾 Save
                   </button>
                 </div>
