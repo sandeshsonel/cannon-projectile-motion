@@ -23,7 +23,7 @@ const Cannon: React.FC = () => {
 
   /* ---------------- ROTATION ---------------- */
   const handleMouseMove = (e: MouseEvent) => {
-    if (!isSelected || isDraggingRef.current) return
+    if (isSelected) return
 
     const rect = svgRef.current!.getBoundingClientRect()
     const mx = e.clientX - rect.left
@@ -106,20 +106,18 @@ const Cannon: React.FC = () => {
       className="absolute inset-0"
       width="100%"
       height="100%"
-      onMouseDown={() => setIsSelected(false)}>
+      onClick={() => setIsSelected(!isSelected)}>
       <g
         transform={`translate(${position.x}, ${position.y}) rotate(${angle})`}
-        // onMouseDown={handleMouseDown}
-        // style={{ cursor: isSelected ? 'grabbing' : 'pointer' }}
-      >
-        <circle r={20} fill={isSelected ? '#22c55e' : '#444'} />
+        style={{ cursor: 'crosshair' }}>
+        <circle r={20} fill="#444" />
         <rect
           x={0}
           y={-8}
           width={barrelLength}
           height={14}
           rx={6}
-          fill={isSelected ? '#2f4858' : '#1f2933'}
+          fill="#1f2933"
         />
       </g>
     </svg>

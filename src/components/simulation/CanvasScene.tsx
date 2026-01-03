@@ -149,22 +149,25 @@ const CanvasScene = () => {
     ctx.stroke()
   }
 
-  const drawTarget = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
-    const x = metersToPixelsX(cannonState.targetPosition.x + 6, w)
-    const y = metersToPixelsY(cannonState.targetPosition.y + 4, h)
+  const drawTarget = useCallback(
+    (ctx: CanvasRenderingContext2D, w: number, h: number) => {
+      const x = metersToPixelsX(cannonState.targetPosition.x + 6, w)
+      const y = metersToPixelsY(cannonState.targetPosition.y + 4, h)
 
-    ctx.strokeStyle = '#2563eb'
-    ctx.lineWidth = 6
-    ctx.beginPath()
-    ctx.moveTo(x - 18, y + 12)
-    ctx.lineTo(x + 18, y + 12)
-    ctx.stroke()
+      ctx.strokeStyle = '#2563eb'
+      ctx.lineWidth = 6
+      ctx.beginPath()
+      ctx.moveTo(x - 18, y + 12)
+      ctx.lineTo(x + 18, y + 12)
+      ctx.stroke()
 
-    ctx.fillStyle = '#ef4444'
-    ctx.beginPath()
-    ctx.arc(x, y - 8, 10, 0, Math.PI * 2)
-    ctx.fill()
-  }
+      ctx.fillStyle = '#ef4444'
+      ctx.beginPath()
+      ctx.arc(x, y - 8, 10, 0, Math.PI * 2)
+      ctx.fill()
+    },
+    [state.targetPosition]
+  )
 
   const drawProjectile = (
     ctx: CanvasRenderingContext2D,
@@ -254,10 +257,7 @@ const CanvasScene = () => {
         animationRef.current = null
       }
     }
-  }, [
-    stateRef.current.helperState.activeProjectile,
-    cannonState.targetPosition
-  ])
+  }, [helperState.activeProjectile, state.targetPosition])
 
   /* ───────────────── ANIMATION ───────────────── */
 
@@ -402,9 +402,9 @@ const CanvasScene = () => {
     ctx.restore()
   }, [
     scale,
-    cannonState.controlPannel,
-    stateRef.current.helperState.activeProjectile,
-    cannonState.targetPosition
+    helperState.activeProjectile,
+    state.controlPannel,
+    state.targetPosition
   ])
 
   const animate = () => {
@@ -465,7 +465,7 @@ const CanvasScene = () => {
         exlosionSoundRef.current.currentTime = 0
       }
     }
-  }, [state.cannonSettings, state.controlPannel])
+  }, [state.cannonSettings, state.controlPannel, state.targetPosition])
 
   const handleReset = () => {
     stateRef.current = {
