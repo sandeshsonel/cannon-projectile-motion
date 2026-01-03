@@ -55,6 +55,7 @@ export const Footer = () => {
             }
             label="Horizontal"
             value="26.6"
+            // {projectile.vx.toFixed(1)}
             unit="m/s"
           />
 
@@ -66,6 +67,7 @@ export const Footer = () => {
             }
             label="Vertical"
             value="-56.3"
+            // {projectile.vy.toFixed(1)}
             unit="m/s"
           />
         </div>
@@ -119,7 +121,7 @@ export const Footer = () => {
           icon={<Flag className="w-4 h-4" />}>
           <Range
             label="Vertical"
-            min={4}
+            min={0}
             max={65}
             value={targetPosition.y}
             unit="m"

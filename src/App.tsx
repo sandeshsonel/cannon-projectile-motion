@@ -1,3 +1,5 @@
+import { Toaster } from '@/components/ui/sonner'
+
 import ControlPanel from './components/controls/ControlPanel'
 import { ElapsedTimer } from './components/ElapsedTimer'
 import { AppLayout } from './components/layout/AppLayout'
@@ -14,6 +16,7 @@ function App() {
           <ControlPanel />
         </AppLayout>
       </CannonProvider>
+      <Toaster />
     </>
   )
 }

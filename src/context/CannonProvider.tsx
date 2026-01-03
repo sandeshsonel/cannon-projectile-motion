@@ -43,8 +43,6 @@ const CannonContext = createContext<CannonContextType>({
 export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
   const [state, setState] = useState<StateType>(initalState)
 
-  console.log('xoxo-state', state)
-
   function handleStateChange<K extends keyof StateType>(
     key: K,
     value: StateType[K]
