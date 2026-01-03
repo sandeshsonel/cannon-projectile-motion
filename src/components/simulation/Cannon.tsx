@@ -107,7 +107,7 @@ const Cannon: React.FC = () => {
       className="absolute inset-0"
       width="100%"
       height="100%"
-      onClick={() => handleSelectCannonAngle(true)}>
+      onClick={() => handleSelectCannonAngle(!isAngleSelected)}>
       <g
         transform={`translate(${position.x}, ${position.y}) rotate(${angle})`}
         style={{ cursor: 'crosshair' }}>
