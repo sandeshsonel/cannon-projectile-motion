@@ -1,4 +1,4 @@
-type ControlPanelState = {
+export type ControlPanelState = {
   isVector: boolean
   isGrid: boolean
   isPath: boolean
@@ -47,6 +47,7 @@ export interface CannonContextType {
     isRestart: boolean
     isContinue: boolean
     isReset: boolean
+    isAngleSelected: boolean
   }
   helperState: {
     activeProjectile: ProjectilePathEntry | null
@@ -81,5 +82,6 @@ export interface CannonContextType {
     handleRestartProjectile: () => void
     handleResumeProjectile: () => void
     handleReset: () => void
+    handleSelectCannonAngle: (isSelect?: boolean) => void
   }
 }

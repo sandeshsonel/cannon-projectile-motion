@@ -1,3 +1,5 @@
+import { useCallback, useMemo, useState } from 'react'
+
 import type {
   CannonContextType,
   CannonSettingsTypeKey,
@@ -5,15 +7,14 @@ import type {
   Projectile,
   ProjectilePathEntry
 } from '@/types'
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState
-} from 'react'
+
+import { CannonStateContext } from './CannonStateContext'
+import { CannonActionsContext } from './CannonActionsContext'
+import { CannonDerivedContext } from './CannonDerivedContext'
 
 type StateType = CannonContextType['state']
+
+/* ───────────────── INITIAL STATE ───────────────── */
 
 const initialState: StateType = {
   controlPannel: {
@@ -25,7 +26,7 @@ const initialState: StateType = {
   cannonSettings: {
     speed: 32,
     angle: -66,
-    position: { x: 60, y: 348 }
+    position: { x: 40, y: 348 }
   },
   targetPosition: { x: 100, y: 0 },
   activeProjectileId: null,
@@ -36,15 +37,16 @@ const initialState: StateType = {
   startTime: 0,
   isRestart: false,
   isContinue: false,
-  isReset: true
+  isReset: true,
+  isAngleSelected: false
 }
 
-const CannonContext = createContext<CannonContextType | null>(null)
+/* ───────────────── PROVIDER ───────────────── */
 
 export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
   const [state, setState] = useState<StateType>(initialState)
 
-  /* ───────────────── CORE STATE HELPER ───────────────── */
+  /* ─────────────── CORE HELPER ─────────────── */
 
   const handleStateChange = useCallback(
     (
@@ -60,7 +62,7 @@ export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
     []
   )
 
-  /* ───────────────── PLAYBACK CONTROLS ───────────────── */
+  /* ─────────────── PLAYBACK ─────────────── */
 
   const handleToogleIsPlaying = useCallback(
     (isPlaying?: boolean) => {
@@ -91,7 +93,7 @@ export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
     }))
   }, [handleStateChange])
 
-  /* ───────────────── RESET / RESTART ───────────────── */
+  /* ─────────────── RESET ─────────────── */
 
   const handleReset = useCallback(() => {
     setState({ ...initialState, isReset: true })
@@ -104,7 +106,7 @@ export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
     }))
   }, [handleStateChange])
 
-  /* ───────────────── FIRE ───────────────── */
+  /* ─────────────── FIRE ─────────────── */
 
   const handleToggleFire = useCallback(
     (isFire?: boolean) => {
@@ -113,11 +115,20 @@ export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
         isFired: isFire ?? !prev.isFired,
         startTime: performance.now()
       }))
+
+      if (isFire !== false) {
+        setTimeout(() => {
+          handleStateChange((prev) => ({
+            ...prev,
+            isFired: false
+          }))
+        }, 100)
+      }
     },
     [handleStateChange]
   )
 
-  /* ───────────────── UI CONTROLS ───────────────── */
+  /* ─────────────── UI CONTROLS ─────────────── */
 
   const handleToggleControlPannel = useCallback(
     (type: ControlPanelToggleKey) => {
@@ -174,7 +185,7 @@ export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
     [handleStateChange]
   )
 
-  /* ───────────────── PROJECTILES ───────────────── */
+  /* ─────────────── PROJECTILES ─────────────── */
 
   const handleAddProjectilePath = useCallback(
     (id: string | null, pathInfo?: ProjectilePathEntry) => {
@@ -246,17 +257,25 @@ export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
     [handleStateChange]
   )
 
-  /* ───────────────── DERIVED STATE ───────────────── */
+  const handleSelectCannonAngle = useCallback(
+    (isSelect?: boolean) => {
+      handleStateChange((prev) => ({
+        ...prev,
+        isAngleSelected: isSelect || !prev.isAngleSelected
+      }))
+    },
+    [handleStateChange]
+  )
+
+  /* ─────────────── DERIVED ─────────────── */
 
   const activeProjectile = useMemo(() => {
     if (!state.activeProjectileId) return null
     return state.projectilePaths[state.activeProjectileId]
   }, [state.activeProjectileId, state.projectilePaths])
 
-  const value: CannonContextType = {
-    state,
-    helperState: { activeProjectile },
-    stateHandler: {
+  const actions = useMemo(
+    () => ({
       handleToggleControlPannel,
       handleChangeSettings,
       handleChangePosition,
@@ -270,19 +289,35 @@ export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
       handleToogleIsPause,
       handleRestartProjectile,
       handleResumeProjectile,
-      handleReset
-    }
-  }
+      handleReset,
+      handleSelectCannonAngle
+    }),
+    [
+      handleToggleControlPannel,
+      handleChangeSettings,
+      handleChangePosition,
+      handleTargetPosition,
+      handleUpdateProjectilePath,
+      handleAddProjectilePath,
+      handleUpdateActiveProjectile,
+      handleToogleIsPlaying,
+      handleRemoveProjectilePathById,
+      handleToggleFire,
+      handleToogleIsPause,
+      handleRestartProjectile,
+      handleResumeProjectile,
+      handleReset,
+      handleSelectCannonAngle
+    ]
+  )
 
   return (
-    <CannonContext.Provider value={value}>{children}</CannonContext.Provider>
+    <CannonStateContext.Provider value={state}>
+      <CannonActionsContext.Provider value={actions}>
+        <CannonDerivedContext.Provider value={{ activeProjectile }}>
+          {children}
+        </CannonDerivedContext.Provider>
+      </CannonActionsContext.Provider>
+    </CannonStateContext.Provider>
   )
-}
-
-export const useCannonContext = () => {
-  const context = useContext(CannonContext)
-  if (!context) {
-    throw new Error('useCannonContext must be used within CannonProvider')
-  }
-  return context
 }

@@ -2,7 +2,7 @@ import { memo } from 'react'
 
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
-import { useCannonContext } from '@/context/CannonProvider'
+import { useCannonActions, useCannonState } from '@/context'
 
 interface ItemProps {
   label: string
@@ -20,10 +20,8 @@ const Item = ({ label, value, onChange }: ItemProps) => (
 )
 
 function ControlPanel() {
-  const {
-    state: { controlPannel },
-    stateHandler: { handleToggleControlPannel: toggle }
-  } = useCannonContext()
+  const { controlPannel } = useCannonState()
+  const { handleToggleControlPannel: toggle } = useCannonActions()
 
   return (
     <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex rounded-md border bg-background p-1 shadow-sm">

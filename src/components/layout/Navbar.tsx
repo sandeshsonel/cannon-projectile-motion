@@ -1,13 +1,12 @@
 import { memo } from 'react'
-import { Info, RotateCcw } from 'lucide-react'
+import { Github, RotateCcw } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { useCannonContext } from '@/context/CannonProvider'
 
 const Navbar = () => {
-  const {
-    stateHandler: { handleReset }
-  } = useCannonContext()
+  const handleNavigate = () => {
+    window.open(import.meta.env.VITE_APP_GITHUB_URL, '_blank')
+  }
   return (
     <nav className="h-10 flex items-center justify-between px-6 border-b bg-background">
       <div className="flex items-center gap-4">
@@ -16,15 +15,19 @@ const Navbar = () => {
 
       <div className="flex gap-2">
         <Button
-          onClick={handleReset}
+          onClick={() => window.location.reload()}
           variant="ghost"
           size="icon"
           className="cursor-pointer">
           <RotateCcw className="h-4 w-4" />
         </Button>
 
-        <Button variant="ghost" size="icon" className="cursor-pointer">
-          <Info className="h-4 w-4" />
+        <Button
+          onClick={handleNavigate}
+          variant="ghost"
+          size="icon"
+          className="cursor-pointer">
+          <Github className="h-4 w-4" />
         </Button>
       </div>
     </nav>

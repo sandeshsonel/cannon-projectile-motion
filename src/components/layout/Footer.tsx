@@ -6,44 +6,24 @@ import { Separator } from '@/components/ui/separator'
 import { Slider } from '@/components/ui/slider'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 
-import { useCannonContext } from '@/context/CannonProvider'
 import { formatTime } from '@/lib/utils'
+import { useCannonActions, useCannonDerived, useCannonState } from '@/context'
 
 const Footer = () => {
+  const { cannonSettings, targetPosition, isPlaying } = useCannonState()
   const {
-    state: { cannonSettings, targetPosition, isPlaying },
-    helperState: { activeProjectile },
-    stateHandler: {
-      handleChangeSettings,
-      handleChangePosition,
-      handleTargetPosition,
-      handleToggleFire
-      // handleToogleIsPause,
-      // handleRestartProjectile,
-      // handleResumeProjectile
-    }
-  } = useCannonContext()
+    handleChangeSettings,
+    handleChangePosition,
+    handleTargetPosition,
+    handleToggleFire,
+    handleSelectCannonAngle
+  } = useCannonActions()
+  const { activeProjectile } = useCannonDerived()
 
   const currentSpeed = Math.sqrt(
     (activeProjectile?.vx ?? 0) * (activeProjectile?.vx ?? 0) +
       (activeProjectile?.vy ?? 0) * (activeProjectile?.vy ?? 0)
   )
-
-  // // Calculate hit probability
-  // const calculateHitProbability = useCallback(() => {
-  //   if (activeProjectile === null) return 0
-
-  //   const distanceToTarget = Math.sqrt(
-  //     Math.pow(targetPosition.x - activeProjectile.x, 2) +
-  //       Math.pow(targetPosition.y - activeProjectile.y, 2)
-  //   )
-
-  //   // Simple probability calculation based on distance
-  //   const baseProbability = Math.max(0, 100 - distanceToTarget)
-  //   const velocityFactor = Math.min(1, currentSpeed / 50)
-
-  //   return Math.min(100, Math.max(0, baseProbability * velocityFactor))
-  // }, [activeProjectile, targetPosition, currentSpeed])
 
   return (
     <footer className="relative z-30 border-t bg-background shadow-xl">
@@ -148,12 +128,13 @@ const Footer = () => {
           />
           <Range
             label="Angle"
-            value={Math.abs(cannonSettings.angle)}
+            value={Number(Math.abs(cannonSettings.angle).toFixed(2))}
             unit="°"
             max={90}
-            onChange={(value) =>
+            onChange={(value) => {
               handleChangeSettings('angle', -Math.abs(value))
-            }
+              handleSelectCannonAngle(true)
+            }}
           />
         </FooterSection>
 

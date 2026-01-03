@@ -1,13 +1,13 @@
 import type { ReactNode } from 'react'
 
-import Footer from './Footer'
 import Navbar from './Navbar'
+import Footer from './Footer'
 
 interface Props {
   children: ReactNode
 }
 
-export const AppLayout = ({ children }: Props) => {
+const AppLayout = ({ children }: Props) => {
   return (
     <div className="h-screen flex flex-col bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-100">
       <Navbar />
@@ -16,3 +16,5 @@ export const AppLayout = ({ children }: Props) => {
     </div>
   )
 }
+
+export default AppLayout

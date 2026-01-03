@@ -1,7 +1,8 @@
 import { memo, useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Timer } from 'lucide-react'
-import { useCannonContext } from '@/context/CannonProvider'
+
+import { useCannonState } from '@/context'
 
 type ElapsedTimerProps = {
   className?: string
@@ -10,9 +11,7 @@ type ElapsedTimerProps = {
 
 function ElapsedTimer({ className }: ElapsedTimerProps) {
   const timeInterval = useRef<ReturnType<typeof setInterval> | null>(null)
-  const {
-    state: { startTime }
-  } = useCannonContext()
+  const { startTime } = useCannonState()
   const [seconds, setSeconds] = useState(startTime)
 
   useEffect(() => {

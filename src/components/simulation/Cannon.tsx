@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { useCannonContext } from '@/context/CannonProvider'
+import { useCannonActions, useCannonState } from '@/context'
+import React, { useEffect, useRef } from 'react'
 
 const barrelLength = 70
 const rotationSpeed = 1
@@ -10,20 +10,21 @@ const Cannon: React.FC = () => {
   const isDraggingRef = useRef(false)
   const dragOffset = useRef({ x: 0, y: 0 })
 
-  const [isSelected, setIsSelected] = useState(false)
-
   const {
-    state: {
-      cannonSettings: { angle, position }
-    },
-    stateHandler: { handleChangeSettings, handleChangePosition }
-  } = useCannonContext()
+    cannonSettings: { angle, position },
+    isAngleSelected
+  } = useCannonState()
+  const {
+    handleChangeSettings,
+    handleChangePosition,
+    handleSelectCannonAngle
+  } = useCannonActions()
 
   const clampAngle = (v: number) => Math.max(-90, Math.min(0, v))
 
   /* ---------------- ROTATION ---------------- */
   const handleMouseMove = (e: MouseEvent) => {
-    if (isSelected) return
+    if (isAngleSelected) return
 
     const rect = svgRef.current!.getBoundingClientRect()
     const mx = e.clientX - rect.left
@@ -69,7 +70,7 @@ const Cannon: React.FC = () => {
   /* ---------------- KEYBOARD ---------------- */
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isSelected) return
+      if (!isAngleSelected) return
 
       if (e.key === 'ArrowLeft') {
         const xPosition = position.x - moveSpeed
@@ -79,10 +80,10 @@ const Cannon: React.FC = () => {
         const xPosition = position.x + moveSpeed
         handleChangePosition('x', xPosition)
       }
-      if (e.key === 'ArrowUp' && !isSelected) {
+      if (e.key === 'ArrowUp' && !isAngleSelected) {
         handleChangeSettings('angle', clampAngle(angle - rotationSpeed))
       }
-      if (e.key === 'ArrowDown' && !isSelected) {
+      if (e.key === 'ArrowDown' && !isAngleSelected) {
         handleChangeSettings('angle', clampAngle(angle + rotationSpeed))
       }
     }
@@ -98,7 +99,7 @@ const Cannon: React.FC = () => {
       window.removeEventListener('mouseup', handleMouseUp)
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [angle, isSelected])
+  }, [angle, isAngleSelected])
 
   return (
     <svg
@@ -106,7 +107,7 @@ const Cannon: React.FC = () => {
       className="absolute inset-0"
       width="100%"
       height="100%"
-      onClick={() => setIsSelected(!isSelected)}>
+      onClick={() => handleSelectCannonAngle(true)}>
       <g
         transform={`translate(${position.x}, ${position.y}) rotate(${angle})`}
         style={{ cursor: 'crosshair' }}>
