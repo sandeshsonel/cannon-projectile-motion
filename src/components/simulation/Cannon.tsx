@@ -37,17 +37,17 @@ const Cannon: React.FC = () => {
   }
 
   /* ---------------- DRAG START ---------------- */
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    setIsSelected(true)
-    isDraggingRef.current = true
+  // const handleMouseDown = (e: React.MouseEvent) => {
+  //   e.stopPropagation()
+  //   setIsSelected(true)
+  //   isDraggingRef.current = true
 
-    const rect = svgRef.current!.getBoundingClientRect()
-    dragOffset.current = {
-      x: e.clientX - rect.left - position.x,
-      y: e.clientY - rect.top - position.y
-    }
-  }
+  //   const rect = svgRef.current!.getBoundingClientRect()
+  //   dragOffset.current = {
+  //     x: e.clientX - rect.left - position.x,
+  //     y: e.clientY - rect.top - position.y
+  //   }
+  // }
 
   /* ---------------- DRAG MOVE ---------------- */
   const handleWindowMouseMove = (e: MouseEvent) => {
