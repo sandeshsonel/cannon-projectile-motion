@@ -1,4 +1,12 @@
-import { RotateCcw, Zap, Gauge, Flag, Rocket, Locate } from 'lucide-react'
+import {
+  RotateCcw,
+  Zap,
+  Gauge,
+  Flag,
+  Rocket,
+  Locate,
+  Clock
+} from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -6,16 +14,40 @@ import { Slider } from '@/components/ui/slider'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 
 import { useCannonContext } from '@/context/CannonProvider'
+import { formatTime } from '@/lib/utils'
 
 export const Footer = () => {
   const {
-    state: { cannonSettings, targetPosition },
+    state: { cannonSettings, targetPosition, isPlaying },
+    helperState: { activeProjectile },
     stateHandler: {
       handleChangeSettings,
       handleChangePosition,
       handleTargetPosition
     }
   } = useCannonContext()
+
+  const currentSpeed = Math.sqrt(
+    (activeProjectile?.vx ?? 0) * (activeProjectile?.vx ?? 0) +
+      (activeProjectile?.vy ?? 0) * (activeProjectile?.vy ?? 0)
+  )
+
+  // // Calculate hit probability
+  // const calculateHitProbability = useCallback(() => {
+  //   if (activeProjectile === null) return 0
+
+  //   const distanceToTarget = Math.sqrt(
+  //     Math.pow(targetPosition.x - activeProjectile.x, 2) +
+  //       Math.pow(targetPosition.y - activeProjectile.y, 2)
+  //   )
+
+  //   // Simple probability calculation based on distance
+  //   const baseProbability = Math.max(0, 100 - distanceToTarget)
+  //   const velocityFactor = Math.min(1, currentSpeed / 50)
+
+  //   return Math.min(100, Math.max(0, baseProbability * velocityFactor))
+  // }, [activeProjectile, targetPosition, currentSpeed])
+
   return (
     <footer className="relative z-30 border-t bg-background shadow-xl">
       {/* TOP ACTION BAR */}
@@ -36,11 +68,17 @@ export const Footer = () => {
 
         {/* LIVE STATS */}
         <div className="flex flex-1 flex-wrap items-center gap-8 px-6 py-2">
+          <Stat
+            icon={<Clock className="w-5 h-5 text-blue-500" />}
+            label="Time"
+            value={formatTime(activeProjectile?.time ?? 0).toString()}
+            unit="m/s"
+          />
           <div className="w-28">
             <Stat
               icon={<Zap className="w-5 h-5 text-blue-500" />}
               label="Speed"
-              value={cannonSettings.speed.toString()}
+              value={currentSpeed.toFixed(1).toString()}
               unit="m/s"
             />
           </div>
@@ -54,8 +92,7 @@ export const Footer = () => {
               </span>
             }
             label="Horizontal"
-            value="26.6"
-            // {projectile.vx.toFixed(1)}
+            value={activeProjectile?.vx?.toFixed?.(1).toString() ?? '0'}
             unit="m/s"
           />
 
@@ -66,10 +103,19 @@ export const Footer = () => {
               </span>
             }
             label="Vertical"
-            value="-56.3"
-            // {projectile.vy.toFixed(1)}
+            value={activeProjectile?.vy?.toFixed?.(1).toString() ?? '0'}
             unit="m/s"
           />
+          {/* <Stat
+            icon={
+              <span className="font-bold text-gray-600">
+                V<sub>y</sub>
+              </span>
+            }
+            label="Hit Probability"
+            value={`${calculateHitProbability().toFixed(1)}%`}
+            unit="m/s"
+          /> */}
         </div>
       </div>
 
@@ -125,6 +171,7 @@ export const Footer = () => {
             max={65}
             value={targetPosition.y}
             unit="m"
+            disabled={isPlaying}
             onChange={(value: number) => handleTargetPosition('y', value)}
           />
           <Range
@@ -133,6 +180,7 @@ export const Footer = () => {
             max={300}
             value={targetPosition.x}
             unit="m"
+            disabled={isPlaying}
             onChange={(value: number) => handleTargetPosition('x', value)}
           />
         </FooterSection>
@@ -203,7 +251,8 @@ const Range = ({
   unit,
   onChange,
   min = 0,
-  max = 100
+  max = 100,
+  disabled = false
 }: {
   label: string
   value: number
@@ -211,6 +260,7 @@ const Range = ({
   min?: number
   max?: number
   onChange?: (value: number) => void
+  disabled?: boolean
 }) => (
   <div className="space-y-3">
     <div className="flex justify-between text-xs text-gray-600">
@@ -221,6 +271,7 @@ const Range = ({
       </span>
     </div>
     <Slider
+      disabled={disabled}
       defaultValue={[value]}
       min={min}
       max={max}

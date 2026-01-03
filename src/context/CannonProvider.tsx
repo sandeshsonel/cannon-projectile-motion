@@ -1,9 +1,11 @@
 import type {
   CannonContextType,
   CannonSettingsTypeKey,
-  ControlPanelToggleKey
+  ControlPanelToggleKey,
+  Projectile,
+  ProjectilePathEntry
 } from '@/types'
-import { useContext, useState } from 'react'
+import { useContext, useMemo, useState } from 'react'
 
 import { createContext } from 'react'
 
@@ -13,12 +15,12 @@ const initalState: StateType = {
   controlPannel: {
     isVector: false,
     isGrid: true,
-    isPath: false,
+    isPath: true,
     isAirResistance: false
   },
   cannonSettings: {
-    speed: 30,
-    angle: -45,
+    speed: 32,
+    angle: -66,
     position: {
       x: 60,
       y: 348
@@ -27,16 +29,25 @@ const initalState: StateType = {
   targetPosition: {
     x: 100,
     y: 0
-  }
+  },
+  activeProjectileId: null,
+  projectilePaths: {},
+  isPlaying: false
 }
 
 const CannonContext = createContext<CannonContextType>({
   state: initalState,
+  helperState: { activeProjectile: null },
   stateHandler: {
     handleToggleControlPannel: () => {},
     handleChangeSettings: () => {},
     handleChangePosition: () => {},
-    handleTargetPosition: () => {}
+    handleTargetPosition: () => {},
+    handleAddProjectilePath: () => {},
+    handleUpdateProjectilePath: () => {},
+    handleUpdateActiveProjectile: () => {},
+    handleToogleIsPlaying: () => {},
+    handleRemoveProjectilePathById: () => {}
   }
 })
 
@@ -64,6 +75,13 @@ export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
         [arg1]: arg2
       }
     })
+  }
+
+  const handleToogleIsPlaying = () => {
+    handleStateChange((prev) => ({
+      ...prev,
+      isPlaying: !prev.isPlaying
+    }))
   }
 
   const handleToggleControlPannel = (type: ControlPanelToggleKey) => {
@@ -118,13 +136,88 @@ export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
     }))
   }
 
+  const handleAddProjectilePath = (
+    id: string | null,
+    pathInfo?: ProjectilePathEntry
+  ) => {
+    handleStateChange((prev) => ({
+      ...prev,
+      activeProjectileId: id,
+      isPlaying: true,
+      ...(id &&
+        pathInfo && {
+          projectilePaths: { ...prev.projectilePaths, [id]: pathInfo }
+        })
+    }))
+  }
+
+  const handleRemoveProjectilePathById = (projectileId: string) => {
+    handleStateChange((prev) => {
+      const newProjectilePaths = { ...prev.projectilePaths }
+      delete newProjectilePaths[projectileId]
+      return {
+        ...prev,
+        projectilePaths: newProjectilePaths
+      }
+    })
+  }
+
+  const handleUpdateActiveProjectile = (
+    updateInfo: Partial<ProjectilePathEntry>
+  ) => {
+    const activeProjectileId = state.activeProjectileId
+    if (!activeProjectileId) return
+    handleStateChange((prev) => ({
+      ...prev,
+      projectilePaths: {
+        ...prev.projectilePaths,
+        [activeProjectileId]: {
+          ...prev.projectilePaths[activeProjectileId],
+          ...updateInfo
+        }
+      }
+    }))
+  }
+
+  const handleUpdateProjectilePath = (
+    id: string,
+    path: { x: number; y: number },
+    projectileInfo?: Projectile
+  ) => {
+    console.log('xoxo-run', { id, path, projectileInfo })
+    handleStateChange((prev) => ({
+      ...prev,
+      projectilePaths: {
+        ...prev.projectilePaths,
+        [id]: {
+          ...prev.projectilePaths[id],
+          ...(projectileInfo ?? {}),
+          paths: [...prev.projectilePaths[id].paths, path]
+        }
+      }
+    }))
+  }
+
+  const activeProjectile = useMemo(() => {
+    if (!state.activeProjectileId) return null
+    return state.projectilePaths[state.activeProjectileId]
+  }, [state.activeProjectileId, state.projectilePaths])
+
+  console.log('xoxo-state', state, activeProjectile)
+
   const values: CannonContextType = {
     state,
+    helperState: { activeProjectile },
     stateHandler: {
       handleToggleControlPannel,
       handleChangeSettings,
       handleChangePosition,
-      handleTargetPosition
+      handleTargetPosition,
+      handleUpdateProjectilePath,
+      handleAddProjectilePath,
+      handleUpdateActiveProjectile,
+      handleToogleIsPlaying,
+      handleRemoveProjectilePathById
     }
   }
 

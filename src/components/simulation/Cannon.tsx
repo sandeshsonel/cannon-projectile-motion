@@ -109,8 +109,9 @@ const Cannon: React.FC = () => {
       onMouseDown={() => setIsSelected(false)}>
       <g
         transform={`translate(${position.x}, ${position.y}) rotate(${angle})`}
-        onMouseDown={handleMouseDown}
-        style={{ cursor: isSelected ? 'grabbing' : 'pointer' }}>
+        // onMouseDown={handleMouseDown}
+        // style={{ cursor: isSelected ? 'grabbing' : 'pointer' }}
+      >
         <circle r={20} fill={isSelected ? '#22c55e' : '#444'} />
         <rect
           x={0}

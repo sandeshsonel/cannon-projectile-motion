@@ -15,11 +15,35 @@ export type ControlPanelToggleKey = keyof ControlPanelState
 
 export type CannonSettingsTypeKey = keyof CannonSettingsType
 
+export interface PathPoint {
+  x: number
+  y: number
+}
+
+export interface Projectile {
+  x: number
+  y: number
+  vx: number
+  vy: number
+  active: boolean
+  time: number
+}
+
+export interface ProjectilePathEntry extends Projectile {
+  paths: PathPoint[]
+}
+
 export interface CannonContextType {
   state: {
     controlPannel: ControlPanelState
     cannonSettings: CannonSettingsType
     targetPosition: { x: number; y: number }
+    activeProjectileId: string | null
+    projectilePaths: Record<string, ProjectilePathEntry>
+    isPlaying: boolean
+  }
+  helperState: {
+    activeProjectile: ProjectilePathEntry | null
   }
   stateHandler: {
     handleToggleControlPannel: (
@@ -32,5 +56,19 @@ export interface CannonContextType {
       value?: number
     ) => void
     handleTargetPosition: (position: 'x' | 'y', value?: number) => void
+    handleAddProjectilePath: (
+      id: string | null,
+      pathInfo?: ProjectilePathEntry
+    ) => void
+    handleUpdateProjectilePath: (
+      id: string,
+      path: PathPoint,
+      projectileInfo?: Projectile
+    ) => void
+    handleUpdateActiveProjectile: (
+      updateInfo: Partial<ProjectilePathEntry>
+    ) => void
+    handleToogleIsPlaying: () => void
+    handleRemoveProjectilePathById: (projectileId: string) => void
   }
 }
