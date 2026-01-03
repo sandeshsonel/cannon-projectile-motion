@@ -1,3 +1,5 @@
+import { memo } from 'react'
+
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
 import { useCannonContext } from '@/context/CannonProvider'
@@ -17,7 +19,7 @@ const Item = ({ label, value, onChange }: ItemProps) => (
   </label>
 )
 
-export default function ControlPanel() {
+function ControlPanel() {
   const {
     state: { controlPannel },
     stateHandler: { handleToggleControlPannel: toggle }
@@ -54,3 +56,5 @@ export default function ControlPanel() {
     </div>
   )
 }
+
+export default memo(ControlPanel)

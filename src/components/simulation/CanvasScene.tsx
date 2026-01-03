@@ -1,6 +1,4 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
-import { Maximize, Minus, Plus } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import Cannon from './Cannon'
 import { useCannonContext } from '@/context/CannonProvider'
 import { toast } from 'sonner'
@@ -46,7 +44,7 @@ const CanvasScene = () => {
   const fireSoundRef = useRef<HTMLAudioElement | null>(null)
   const exlosionSoundRef = useRef<HTMLAudioElement | null>(null)
   const currentShotIdRef = useRef<string | null>(null)
-  const [scale, setScale] = useState(1)
+  const [scale] = useState(1)
   const stateRef = useRef<Pick<CannonContextType, 'state' | 'helperState'>>({
     state,
     helperState
@@ -182,7 +180,7 @@ const CanvasScene = () => {
     const x = metersToPixelsX(p.x, w)
     const y = metersToPixelsY(p.y, h)
 
-    const size = 20
+    const size = 28
 
     ctx.drawImage(cannonBallImg, x - size / 2, y - size / 2, size, size)
   }
@@ -226,7 +224,8 @@ const CanvasScene = () => {
         cancelAnimationFrame(animationRef.current)
         animationRef.current = null
       }
-      handleToogleIsPlaying()
+      stateRef.current.state.isPlaying = false
+      handleToogleIsPlaying(false)
       return
     }
 
@@ -246,8 +245,9 @@ const CanvasScene = () => {
       p.active = false
       toast.info('Target hit!', { position: 'top-center' })
       exlosionSoundRef.current?.play()
+      stateRef.current.state.isPlaying = false
 
-      handleToogleIsPlaying()
+      handleToogleIsPlaying(false)
 
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current)
@@ -338,31 +338,32 @@ const CanvasScene = () => {
       return
     }
     const paths = stateRef.current.state.projectilePaths
+    if (Object.keys(paths ?? {}).length > 0) {
+      Object.values(paths).forEach((path, index) => {
+        if (path.paths.length < 2) return
 
-    Object.values(paths).forEach((path, index) => {
-      if (path.paths.length < 2) return
+        const hue = (index * 60) % 360
+        ctx.strokeStyle = `hsla(${hue}, 80%, 55%, 0.6)`
 
-      const hue = (index * 60) % 360
-      ctx.strokeStyle = `hsla(${hue}, 80%, 55%, 0.6)`
+        ctx.lineWidth = 4
+        ctx.setLineDash([])
 
-      ctx.lineWidth = 4
-      ctx.setLineDash([])
+        ctx.beginPath()
 
-      ctx.beginPath()
+        path.paths.forEach((p, i) => {
+          const x = metersToPixelsX(p.x, w)
+          const y = metersToPixelsY(p.y, h)
 
-      path.paths.forEach((p, i) => {
-        const x = metersToPixelsX(p.x, w)
-        const y = metersToPixelsY(p.y, h)
+          if (i === 0) {
+            ctx.moveTo(x, y)
+          } else {
+            ctx.lineTo(x, y)
+          }
+        })
 
-        if (i === 0) {
-          ctx.moveTo(x, y)
-        } else {
-          ctx.lineTo(x, y)
-        }
+        ctx.stroke()
       })
-
-      ctx.stroke()
-    })
+    }
   }
 
   const draw = useCallback(() => {
@@ -383,45 +384,28 @@ const CanvasScene = () => {
     drawGround(ctx, w, h)
     drawAxes(ctx, w, h)
 
-    // preview (future)
-    // drawTrajectory(ctx, w, h)
-
     // actual path (past)
     if (controlPannel.isPath) {
       drawProjectilePaths(ctx, w, h)
     }
 
+    drawTarget(ctx, w, h)
+
     // projectile
-    drawProjectile(ctx, w, h)
+    if (stateRef.current.helperState.activeProjectile) drawProjectile(ctx, w, h)
 
     const p = stateRef.current.helperState.activeProjectile
     if (p && p.active) {
       drawVelocityVector(ctx, p.x, p.y, p.vx, p.vy, w, h)
     }
 
-    drawTarget(ctx, w, h)
-    drawProjectile(ctx, w, h)
-
     ctx.restore()
   }, [
+    scale,
     cannonState.controlPannel,
     stateRef.current.helperState.activeProjectile,
     cannonState.targetPosition
   ])
-
-  // const animate = () => {
-  //   const p = stateRef.current.helperState.activeProjectile
-
-  //   if (!p || !p.active) {
-  //     animationRef.current = null
-  //     return
-  //   }
-
-  //   updateProjectile()
-  //   draw()
-
-  //   animationRef.current = requestAnimationFrame(animate)
-  // }
 
   const animate = () => {
     const p = stateRef.current.helperState.activeProjectile
@@ -438,7 +422,7 @@ const CanvasScene = () => {
     animationRef.current = requestAnimationFrame(animate)
   }
 
-  const fire = () => {
+  const fire = useCallback(() => {
     if (cannonState.isPlaying) {
       handleRemoveProjectilePathById(currentShotIdRef.current as string)
     }
@@ -474,10 +458,6 @@ const CanvasScene = () => {
 
     animate()
 
-    playFireSound()
-  }
-
-  const playFireSound = () => {
     if (fireSoundRef.current) {
       fireSoundRef.current.currentTime = 0
       fireSoundRef.current?.play()
@@ -485,6 +465,16 @@ const CanvasScene = () => {
         exlosionSoundRef.current.currentTime = 0
       }
     }
+  }, [state.cannonSettings, state.controlPannel])
+
+  const handleReset = () => {
+    stateRef.current = {
+      state,
+      helperState
+    }
+    currentShotIdRef.current = null
+    if (animationRef.current) cancelAnimationFrame(animationRef.current)
+    draw()
   }
 
   const debouncedfire = debounce(fire, 300)
@@ -500,11 +490,7 @@ const CanvasScene = () => {
       window.removeEventListener('resize', resizeCanvas)
       if (animationRef.current) cancelAnimationFrame(animationRef.current)
     }
-  }, [])
-
-  useEffect(() => {
-    draw()
-  }, [state.targetPosition])
+  }, [scale, state.targetPosition])
 
   useEffect(() => {
     fireSoundRef.current = new Audio('/assets/sound/cannon_fire.mp3')
@@ -520,6 +506,18 @@ const CanvasScene = () => {
     }
   }, [state, helperState])
 
+  useEffect(() => {
+    if (state.isFired) {
+      debouncedfire()
+    }
+  }, [state.isFired])
+
+  useEffect(() => {
+    if (state.isReset) {
+      handleReset()
+    }
+  }, [state.isReset])
+
   /* ───────────────── RENDER ───────────────── */
 
   return (
@@ -530,15 +528,13 @@ const CanvasScene = () => {
       <Cannon />
 
       {/* UI */}
-      <div className="absolute right-6 top-1/2 -translate-y-1/2 z-20">
+      {/* <div className="absolute right-6 top-1/2 -translate-y-1/2 z-20">
         <div className="flex flex-col gap-1 rounded-lg bg-white/70 backdrop-blur-md p-0.5 shadow-sm border">
           <Button
             variant="ghost"
             size="sm"
             className="cursor-pointer"
-            onDoubleClick={debouncedfire}
-            // onClick={() => setScale((s) => Math.min(s + 0.1, 2))}
-          >
+            onClick={() => setScale((s) => Math.min(s + 0.1))}>
             <Plus />
           </Button>
 
@@ -558,7 +554,7 @@ const CanvasScene = () => {
             <Minus />
           </Button>
         </div>
-      </div>
+      </div> */}
     </main>
   )
 }

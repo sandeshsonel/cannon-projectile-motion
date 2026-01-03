@@ -41,6 +41,12 @@ export interface CannonContextType {
     activeProjectileId: string | null
     projectilePaths: Record<string, ProjectilePathEntry>
     isPlaying: boolean
+    isPaused: boolean
+    isFired: boolean
+    startTime: number
+    isRestart: boolean
+    isContinue: boolean
+    isReset: boolean
   }
   helperState: {
     activeProjectile: ProjectilePathEntry | null
@@ -68,7 +74,12 @@ export interface CannonContextType {
     handleUpdateActiveProjectile: (
       updateInfo: Partial<ProjectilePathEntry>
     ) => void
-    handleToogleIsPlaying: () => void
+    handleToogleIsPlaying: (value?: boolean) => void
     handleRemoveProjectilePathById: (projectileId: string) => void
+    handleToggleFire: (isFire?: boolean) => void
+    handleToogleIsPause: (isPaused?: boolean) => void
+    handleRestartProjectile: () => void
+    handleResumeProjectile: () => void
+    handleReset: () => void
   }
 }

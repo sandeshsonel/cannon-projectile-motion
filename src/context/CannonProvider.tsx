@@ -32,7 +32,13 @@ const initalState: StateType = {
   },
   activeProjectileId: null,
   projectilePaths: {},
-  isPlaying: false
+  isPlaying: false,
+  isPaused: false,
+  isFired: false,
+  startTime: 0,
+  isRestart: false,
+  isContinue: false,
+  isReset: true
 }
 
 const CannonContext = createContext<CannonContextType>({
@@ -47,7 +53,12 @@ const CannonContext = createContext<CannonContextType>({
     handleUpdateProjectilePath: () => {},
     handleUpdateActiveProjectile: () => {},
     handleToogleIsPlaying: () => {},
-    handleRemoveProjectilePathById: () => {}
+    handleRemoveProjectilePathById: () => {},
+    handleToggleFire: () => {},
+    handleToogleIsPause: () => {},
+    handleRestartProjectile: () => {},
+    handleResumeProjectile: () => {},
+    handleReset: () => {}
   }
 })
 
@@ -77,11 +88,60 @@ export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
     })
   }
 
-  const handleToogleIsPlaying = () => {
+  const handleToogleIsPlaying = (isPlaying?: boolean) => {
     handleStateChange((prev) => ({
       ...prev,
-      isPlaying: !prev.isPlaying
+      isPlaying: isPlaying ?? !prev.isPlaying
     }))
+  }
+
+  const handleToogleIsPause = (isPaused?: boolean) => {
+    handleStateChange((prev) => ({
+      ...prev,
+      isPaused: isPaused ?? !prev.isPaused,
+      isPlaying: false
+    }))
+  }
+
+  const handleResumeProjectile = () => {
+    handleStateChange((prev) => ({
+      ...prev,
+      isPaused: false,
+      isContinue: true
+    }))
+  }
+
+  const handleReset = (isReset?: boolean) => {
+    handleStateChange(() => ({
+      ...initalState,
+      isReset: isReset ?? true
+    }))
+
+    setTimeout(() => {
+      handleReset(false)
+    }, 100)
+  }
+
+  const handleRestartProjectile = () => {
+    handleStateChange((prev) => ({
+      ...prev,
+      isRestart: !prev.isRestart
+    }))
+
+    setInterval(() => {
+      handleRestartProjectile()
+    }, 200)
+  }
+
+  const handleToggleFire = (isFire?: boolean) => {
+    handleStateChange((prev) => ({
+      ...prev,
+      isFired: isFire ?? !prev.isFired,
+      startTime: 1
+    }))
+    setTimeout(() => {
+      handleToggleFire(false)
+    }, 0)
   }
 
   const handleToggleControlPannel = (type: ControlPanelToggleKey) => {
@@ -184,7 +244,6 @@ export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
     path: { x: number; y: number },
     projectileInfo?: Projectile
   ) => {
-    console.log('xoxo-run', { id, path, projectileInfo })
     handleStateChange((prev) => ({
       ...prev,
       projectilePaths: {
@@ -192,7 +251,7 @@ export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
         [id]: {
           ...prev.projectilePaths[id],
           ...(projectileInfo ?? {}),
-          paths: [...prev.projectilePaths[id].paths, path]
+          paths: [...(prev.projectilePaths?.[id]?.paths ?? []), path]
         }
       }
     }))
@@ -202,8 +261,6 @@ export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
     if (!state.activeProjectileId) return null
     return state.projectilePaths[state.activeProjectileId]
   }, [state.activeProjectileId, state.projectilePaths])
-
-  console.log('xoxo-state', state, activeProjectile)
 
   const values: CannonContextType = {
     state,
@@ -217,7 +274,12 @@ export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
       handleAddProjectilePath,
       handleUpdateActiveProjectile,
       handleToogleIsPlaying,
-      handleRemoveProjectilePathById
+      handleRemoveProjectilePathById,
+      handleToggleFire,
+      handleToogleIsPause,
+      handleRestartProjectile,
+      handleResumeProjectile,
+      handleReset
     }
   }
 

@@ -1,12 +1,5 @@
-import {
-  RotateCcw,
-  Zap,
-  Gauge,
-  Flag,
-  Rocket,
-  Locate,
-  Clock
-} from 'lucide-react'
+import { memo } from 'react'
+import { Zap, Gauge, Flag, Rocket, Locate, Clock } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -16,14 +9,18 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { useCannonContext } from '@/context/CannonProvider'
 import { formatTime } from '@/lib/utils'
 
-export const Footer = () => {
+const Footer = () => {
   const {
     state: { cannonSettings, targetPosition, isPlaying },
     helperState: { activeProjectile },
     stateHandler: {
       handleChangeSettings,
       handleChangePosition,
-      handleTargetPosition
+      handleTargetPosition,
+      handleToggleFire
+      // handleToogleIsPause,
+      // handleRestartProjectile,
+      // handleResumeProjectile
     }
   } = useCannonContext()
 
@@ -56,14 +53,33 @@ export const Footer = () => {
         <div className="flex items-center gap-4 px-4 py-1 border-b lg:border-b-0 lg:border-r">
           <Button
             size="lg"
-            className="gap-2 rounded-full bg-red-600 hover:bg-red-700 active:scale-95 cursor-pointer">
+            className="gap-2 rounded-full bg-red-600 hover:bg-red-700 active:scale-95 cursor-pointer"
+            onClick={() => handleToggleFire()}>
             <Rocket className="w-5 h-5" />
             FIRE
           </Button>
 
-          <div className="flex items-center gap-2 rounded-full px-2 py-1">
-            <IconButton icon={<RotateCcw className="w-5 h-5" />} />
-          </div>
+          {/* <div className="flex items-center gap-2 rounded-full px-2 py-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() =>
+                isPaused
+                  ? handleResumeProjectile()
+                  : isPlaying
+                  ? handleToogleIsPause(true)
+                  : handleRestartProjectile()
+              }
+              className="cursor-pointer text-gray-500 hover:text-black">
+              {isPaused ? (
+                <Play className="w-5 h-5" />
+              ) : isPlaying ? (
+                <Pause className="w-5 h-5" />
+              ) : (
+                <RotateCcw className="w-5 h-5" />
+              )}
+            </Button>
+          </div> */}
         </div>
 
         {/* LIVE STATS */}
@@ -189,16 +205,9 @@ export const Footer = () => {
   )
 }
 
-/* ---------- SUB COMPONENTS ---------- */
+export default memo(Footer)
 
-const IconButton = ({ icon }: { icon: React.ReactNode }) => (
-  <Button
-    variant="ghost"
-    size="icon"
-    className="cursor-pointer text-gray-500 hover:text-black">
-    {icon}
-  </Button>
-)
+/* ---------- SUB COMPONENTS ---------- */
 
 const Stat = ({
   icon,
