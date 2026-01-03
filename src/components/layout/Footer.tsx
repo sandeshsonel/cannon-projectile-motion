@@ -125,6 +125,7 @@ const Footer = () => {
             value={cannonSettings.speed}
             unit="m/s"
             onChange={(value) => handleChangeSettings('speed', value)}
+            disabled={isPlaying}
           />
           <Range
             label="Angle"
@@ -135,6 +136,7 @@ const Footer = () => {
               handleChangeSettings('angle', -Math.abs(value))
               handleSelectCannonAngle(true)
             }}
+            disabled={isPlaying}
           />
         </FooterSection>
 
@@ -148,6 +150,7 @@ const Footer = () => {
             value={cannonSettings.position.x}
             unit="m"
             onChange={(value) => handleChangePosition('x', value)}
+            disabled={isPlaying}
           />
           <Range
             label="Horizontal"
@@ -156,6 +159,7 @@ const Footer = () => {
             value={cannonSettings.position.y}
             unit="m"
             onChange={(value) => handleChangePosition('y', value)}
+            disabled={isPlaying}
           />
         </FooterSection>
 
