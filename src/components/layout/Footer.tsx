@@ -70,7 +70,7 @@ const Footer = () => {
             value={formatTime(activeProjectile?.time ?? 0).toString()}
             unit="m/s"
           />
-          <div className="w-28">
+          <div className="w-32">
             <Stat
               icon={<Zap className="w-5 h-5 text-blue-500" />}
               label="Speed"
