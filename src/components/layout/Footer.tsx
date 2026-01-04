@@ -1,20 +1,20 @@
 import { memo } from 'react'
-import { Zap, Gauge, Flag, Rocket, Locate, Clock } from 'lucide-react'
+import { Zap, Gauge, Flag, Rocket, Locate, Clock, Info } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Slider } from '@/components/ui/slider'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 
-import { formatTime } from '@/lib/utils'
+import { cn, formatTime } from '@/lib/utils'
 import { useCannonActions, useCannonDerived, useCannonState } from '@/context'
 
 const Footer = () => {
-  const { cannonSettings, targetPosition, isPlaying } = useCannonState()
+  const { cannonSettings, isPlaying, targetSummary } = useCannonState()
   const {
     handleChangeSettings,
     handleChangePosition,
-    handleTargetPosition,
+    // handleTargetPosition,
     handleToggleFire,
     handleSelectCannonAngle
   } = useCannonActions()
@@ -116,75 +116,121 @@ const Footer = () => {
       </div>
 
       {/* BOTTOM SETTINGS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 border-t divide-y md:divide-y-0 md:divide-x">
-        <FooterSection
-          title="Cannon Velocity"
-          icon={<Gauge className="w-4 h-4" />}>
-          <Range
-            label="Speed"
-            value={cannonSettings.speed}
-            unit="m/s"
-            onChange={(value) => handleChangeSettings('speed', value)}
-            disabled={isPlaying}
-          />
-          <Range
-            label="Angle"
-            value={Number(Math.abs(cannonSettings.angle).toFixed(2))}
-            unit="°"
-            max={90}
-            onChange={(value) => {
-              handleChangeSettings('angle', -Math.abs(value))
-              handleSelectCannonAngle(true)
-            }}
-            disabled={isPlaying}
-          />
-        </FooterSection>
+      <div className="flex items-start gap-3 border-t w-full pr-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 min-w-9/12 w-full">
+          <FooterSection
+            title="Cannon Velocity"
+            icon={<Gauge className="w-4 h-4" />}>
+            <Range
+              label="Speed"
+              value={cannonSettings.speed}
+              unit="m/s"
+              onChange={(value) => handleChangeSettings('speed', value)}
+            />
+            <Range
+              label="Angle"
+              value={Number(Math.abs(cannonSettings.angle).toFixed(2))}
+              unit="°"
+              max={90}
+              onChange={(value) => {
+                handleChangeSettings('angle', -Math.abs(value))
+                handleSelectCannonAngle(true)
+              }}
+            />
+          </FooterSection>
 
-        <FooterSection
-          title="Cannon Position"
-          icon={<Locate className="w-4 h-4" />}>
-          <Range
-            label="Vertical"
-            min={60}
-            max={560}
-            value={cannonSettings.position.x}
-            unit="m"
-            onChange={(value) => handleChangePosition('x', value)}
-            disabled={isPlaying}
-          />
-          <Range
-            label="Horizontal"
-            min={20}
-            max={348}
-            value={cannonSettings.position.y}
-            unit="m"
-            onChange={(value) => handleChangePosition('y', value)}
-            disabled={isPlaying}
-          />
-        </FooterSection>
+          <FooterSection
+            className="border-r border-l"
+            title="Cannon Position"
+            icon={<Locate className="w-4 h-4" />}>
+            <Range
+              label="Vertical"
+              min={60}
+              max={560}
+              value={cannonSettings.position.x}
+              unit="m"
+              onChange={(value) => handleChangePosition('x', value)}
+              disabled={isPlaying}
+            />
+            <Range
+              label="Horizontal"
+              min={20}
+              max={348}
+              value={cannonSettings.position.y}
+              unit="m"
+              onChange={(value) => handleChangePosition('y', value)}
+              disabled={isPlaying}
+            />
+          </FooterSection>
 
-        <FooterSection
-          title="Target Position"
-          icon={<Flag className="w-4 h-4" />}>
-          <Range
-            label="Vertical"
-            min={0}
-            max={65}
-            value={targetPosition.y}
-            unit="m"
-            disabled={isPlaying}
-            onChange={(value: number) => handleTargetPosition('y', value)}
-          />
-          <Range
-            label="Horizontal"
-            min={50}
-            max={300}
-            value={targetPosition.x}
-            unit="m"
-            disabled={isPlaying}
-            onChange={(value: number) => handleTargetPosition('x', value)}
-          />
-        </FooterSection>
+          <FooterSection
+            className="border-r"
+            title="Target Position"
+            icon={<Flag className="w-4 h-4" />}>
+            <Range
+              label="Vertical"
+              min={0}
+              max={65}
+              value={targetSummary?.currentTarget?.position.y ?? 0}
+              unit="m"
+              disabled={true}
+              // onChange={(value: number) => handleTargetPosition('y', value)}
+            />
+            <Range
+              label="Horizontal"
+              min={50}
+              max={300}
+              value={targetSummary?.currentTarget?.position.x ?? 0}
+              unit="m"
+              disabled={true}
+              // onChange={(value: number) => handleTargetPosition('x', value)}
+            />
+          </FooterSection>
+        </div>
+        <div className="w-full">
+          <Card className="py-4 shadow-none w-full rounded-none border-0 gap-1.5">
+            <CardHeader className="px-2">
+              <h3 className="flex gap-2 text-xs font-bold uppercase text-black">
+                <Info className="w-4 h-4" />
+                Summary
+              </h3>
+            </CardHeader>
+            <CardContent className="px-4 shadow border rounded-md">
+              <div className="flex items-center w-full gap-2 p-3 h-fit">
+                {/* Total Target */}
+                <div className="flex flex-col items-center justify-center w-full">
+                  <span className="mb-0.5 text-xs font-bold uppercase text-slate-400">
+                    Targets
+                  </span>
+                  <span className="font-mono font-bold text-xl text-blue-600 dark:text-blue-400">
+                    {targetSummary.totolTargets}
+                  </span>
+                </div>
+                {/* Shots */}
+                <div className="flex flex-col items-center justify-center w-full">
+                  <span className="mb-0.5 text-xs font-bold uppercase text-slate-400">
+                    Shots Fired
+                  </span>
+                  <span className="font-mono font-bold text-xl text-slate-700 dark:text-slate-200">
+                    {targetSummary?.countTotalFire ?? 0}
+                  </span>
+                </div>
+
+                {/* Hits */}
+                <div className="flex flex-col items-center justify-center w-full">
+                  <span className="mb-0.5 text-xs font-bold uppercase text-slate-400">
+                    Hits
+                  </span>
+                  <span className="font-mono font-bold text-xl text-green-600 dark:text-green-400">
+                    {targetSummary?.countTargetHit ?? 0}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+
+            {/* Vertical separators */}
+          </Card>
+        </div>
       </div>
     </footer>
   )
@@ -222,20 +268,22 @@ const Stat = ({
 const FooterSection = ({
   title,
   icon,
-  children
+  children,
+  className = ''
 }: {
   title: string
   icon: React.ReactNode
   children: React.ReactNode
+  className?: string
 }) => (
-  <Card className="rounded-none border-0 gap-1.5">
+  <Card className={cn('rounded-none border-0 gap-1.5 shadow-none', className)}>
     <CardHeader className="pb-2">
       <h3 className="flex items-center gap-2 text-xs font-bold uppercase text-black">
         {icon}
         {title}
       </h3>
     </CardHeader>
-    <CardContent className="space-y-4">{children}</CardContent>
+    <CardContent className="space-y-4 px-4">{children}</CardContent>
   </Card>
 )
 

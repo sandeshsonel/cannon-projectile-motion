@@ -11,11 +11,14 @@ type ElapsedTimerProps = {
 
 function ElapsedTimer({ className }: ElapsedTimerProps) {
   const timeInterval = useRef<ReturnType<typeof setInterval> | null>(null)
-  const { startTime } = useCannonState()
-  const [seconds, setSeconds] = useState(startTime)
+  const {
+    startTime,
+    targetSummary: { isOpenSuccessModal }
+  } = useCannonState()
+  const [seconds, setSeconds] = useState(0)
 
   useEffect(() => {
-    if (startTime > 0) {
+    if (startTime) {
       timeInterval.current = setInterval(() => {
         setSeconds((prev) => prev + 1)
       }, 1000)
@@ -25,6 +28,12 @@ function ElapsedTimer({ className }: ElapsedTimerProps) {
       if (timeInterval.current) clearInterval(timeInterval.current)
     }
   }, [startTime])
+
+  useEffect(() => {
+    if (isOpenSuccessModal && timeInterval.current) {
+      clearInterval(timeInterval.current)
+    }
+  }, [isOpenSuccessModal])
 
   const formatTime = (total: number) => {
     const hrs = Math.floor(total / 3600)

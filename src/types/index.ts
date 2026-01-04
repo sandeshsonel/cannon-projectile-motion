@@ -37,17 +37,25 @@ export interface CannonContextType {
   state: {
     controlPannel: ControlPanelState
     cannonSettings: CannonSettingsType
-    targetPosition: { x: number; y: number }
     activeProjectileId: string | null
     projectilePaths: Record<string, ProjectilePathEntry>
     isPlaying: boolean
     isPaused: boolean
     isFired: boolean
-    startTime: number
+    startTime: number | null
+    endTime: number | null
     isRestart: boolean
     isContinue: boolean
     isReset: boolean
     isAngleSelected: boolean
+    targetSummary: {
+      currentTargetIndex: number
+      totolTargets: number
+      currentTarget: Target | null
+      countTotalFire: number
+      countTargetHit: number
+      isOpenSuccessModal: boolean
+    }
   }
   helperState: {
     activeProjectile: ProjectilePathEntry | null
@@ -62,7 +70,6 @@ export interface CannonContextType {
       postion: { x: number; y: number } | 'x' | 'y',
       value?: number
     ) => void
-    handleTargetPosition: (position: 'x' | 'y', value?: number) => void
     handleAddProjectilePath: (
       id: string | null,
       pathInfo?: ProjectilePathEntry
@@ -83,5 +90,14 @@ export interface CannonContextType {
     handleResumeProjectile: () => void
     handleReset: () => void
     handleSelectCannonAngle: (isSelect?: boolean) => void
+    handleChangeFireSummary: (isTargetHit?: boolean) => void
+  }
+}
+
+export type Target = {
+  id: string
+  position: {
+    x: number
+    y: number
   }
 }

@@ -1,16 +1,18 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 
 import type {
   CannonContextType,
   CannonSettingsTypeKey,
   ControlPanelToggleKey,
   Projectile,
-  ProjectilePathEntry
+  ProjectilePathEntry,
+  Target
 } from '@/types'
 
 import { CannonStateContext } from './CannonStateContext'
 import { CannonActionsContext } from './CannonActionsContext'
 import { CannonDerivedContext } from './CannonDerivedContext'
+import { generateTargets } from '@/lib/utils'
 
 type StateType = CannonContextType['state']
 
@@ -28,17 +30,25 @@ const initialState: StateType = {
     angle: -66,
     position: { x: 40, y: 348 }
   },
-  targetPosition: { x: 100, y: 0 },
   activeProjectileId: null,
   projectilePaths: {},
   isPlaying: false,
   isPaused: false,
   isFired: false,
-  startTime: 0,
+  startTime: null,
+  endTime: null,
   isRestart: false,
   isContinue: false,
   isReset: true,
-  isAngleSelected: false
+  isAngleSelected: false,
+  targetSummary: {
+    currentTargetIndex: 0,
+    totolTargets: 0,
+    currentTarget: null,
+    countTotalFire: 0,
+    countTargetHit: 0,
+    isOpenSuccessModal: false
+  }
 }
 
 /* ───────────────── PROVIDER ───────────────── */
@@ -172,18 +182,18 @@ export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
     [handleStateChange]
   )
 
-  const handleTargetPosition = useCallback(
-    (position: 'x' | 'y', value?: number) => {
-      handleStateChange((prev) => ({
-        ...prev,
-        targetPosition: {
-          ...prev.targetPosition,
-          [position]: value
-        }
-      }))
-    },
-    [handleStateChange]
-  )
+  // const handleTargetPosition = useCallback(
+  //   (position: 'x' | 'y', value?: number) => {
+  //     handleStateChange((prev) => ({
+  //       ...prev,
+  //       targetPosition: {
+  //         ...prev.targetPosition,
+  //         [position]: value
+  //       }
+  //     }))
+  //   },
+  //   [handleStateChange]
+  // )
 
   /* ─────────────── PROJECTILES ─────────────── */
 
@@ -267,6 +277,20 @@ export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
     [handleStateChange]
   )
 
+  const handleSetCurrentTarget = useCallback(
+    (targets: Target[]) => {
+      handleStateChange((prev) => ({
+        ...prev,
+        targetSummary: {
+          ...prev.targetSummary,
+          totolTargets: targets.length,
+          currentTarget: targets[prev.targetSummary.currentTargetIndex]
+        }
+      }))
+    },
+    [handleStateChange]
+  )
+
   /* ─────────────── DERIVED ─────────────── */
 
   const activeProjectile = useMemo(() => {
@@ -274,12 +298,59 @@ export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
     return state.projectilePaths[state.activeProjectileId]
   }, [state.activeProjectileId, state.projectilePaths])
 
+  const totalTargets = useMemo(() => {
+    return generateTargets()
+  }, [])
+
+  /* ─────────────── DERIVED ─────────────── */
+
+  const handleChangeFireSummary = useCallback(
+    (isTargetHit?: boolean) => {
+      handleStateChange((prev) => ({
+        ...prev,
+        startTime: !prev.startTime ? Date.now() : prev.startTime,
+        endTime:
+          isTargetHit &&
+          prev.targetSummary.countTargetHit + 1 === totalTargets.length
+            ? Date.now()
+            : null,
+        targetSummary: {
+          ...prev.targetSummary,
+          currentTargetIndex: isTargetHit
+            ? prev.targetSummary.currentTargetIndex + 1
+            : prev.targetSummary.currentTargetIndex,
+          countTotalFire: prev.targetSummary.countTotalFire + 1,
+          currentTarget: isTargetHit
+            ? totalTargets?.[prev.targetSummary.currentTargetIndex + 1]
+            : prev.targetSummary.currentTarget,
+          countTargetHit: isTargetHit
+            ? prev.targetSummary.countTargetHit + 1
+            : prev.targetSummary.countTargetHit,
+          isOpenSuccessModal: !!(
+            isTargetHit &&
+            prev.targetSummary.countTargetHit + 1 === totalTargets.length
+          )
+        }
+      }))
+    },
+    [handleStateChange]
+  )
+
+  useLayoutEffect(() => {
+    const timeout = setTimeout(() => {
+      handleSetCurrentTarget(totalTargets)
+    }, 0)
+    return () => {
+      clearTimeout(timeout)
+    }
+  }, [])
+
   const actions = useMemo(
     () => ({
       handleToggleControlPannel,
       handleChangeSettings,
       handleChangePosition,
-      handleTargetPosition,
+      // handleTargetPosition,
       handleUpdateProjectilePath,
       handleAddProjectilePath,
       handleUpdateActiveProjectile,
@@ -290,13 +361,14 @@ export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
       handleRestartProjectile,
       handleResumeProjectile,
       handleReset,
-      handleSelectCannonAngle
+      handleSelectCannonAngle,
+      handleChangeFireSummary
     }),
     [
       handleToggleControlPannel,
       handleChangeSettings,
       handleChangePosition,
-      handleTargetPosition,
+      // handleTargetPosition,
       handleUpdateProjectilePath,
       handleAddProjectilePath,
       handleUpdateActiveProjectile,
@@ -307,7 +379,8 @@ export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
       handleRestartProjectile,
       handleResumeProjectile,
       handleReset,
-      handleSelectCannonAngle
+      handleSelectCannonAngle,
+      handleChangeFireSummary
     ]
   )
 

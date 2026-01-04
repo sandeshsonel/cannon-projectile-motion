@@ -8,7 +8,7 @@ import { useCannonActions, useCannonDerived, useCannonState } from '@/context'
 /* ───────────────── CONSTANTS ───────────────── */
 
 const GROUND_OFFSET = 30
-const TARGET_RADIUS = 10 // meters (tune visually)
+const TARGET_RADIUS = 8 // meters (tune visually)
 const TARGET_Y_OFFSET = 0.8 // meters above ground
 
 const AIR_RESISTANCE = 0.015
@@ -30,7 +30,8 @@ const CanvasScene = () => {
     handleAddProjectilePath,
     handleUpdateProjectilePath,
     handleToogleIsPlaying,
-    handleRemoveProjectilePathById
+    handleRemoveProjectilePathById,
+    handleChangeFireSummary
   } = useCannonActions()
   const state = useCannonState()
   const helperState = useCannonDerived()
@@ -155,8 +156,14 @@ const CanvasScene = () => {
 
   const drawTarget = useCallback(
     (ctx: CanvasRenderingContext2D, w: number, h: number) => {
-      const x = metersToPixelsX(cannonState.targetPosition.x + 6, w)
-      const y = metersToPixelsY(cannonState.targetPosition.y + 4, h)
+      const x = metersToPixelsX(
+        state.targetSummary?.currentTarget?.position.x ?? 0 + 6,
+        w
+      )
+      const y = metersToPixelsY(
+        state.targetSummary?.currentTarget?.position.y ?? 0 + 4,
+        h
+      )
 
       ctx.strokeStyle = '#2563eb'
       ctx.lineWidth = 6
@@ -170,7 +177,7 @@ const CanvasScene = () => {
       ctx.arc(x, y - 8, 10, 0, Math.PI * 2)
       ctx.fill()
     },
-    [state.targetPosition]
+    [state.targetSummary.currentTarget, state.targetSummary.currentTarget]
   )
 
   const drawProjectile = (
@@ -239,12 +246,15 @@ const CanvasScene = () => {
         p.y = 0
         p.active = false
         stopSimulation()
+        handleChangeFireSummary()
+
         return
       }
 
       /* ───── TARGET HIT ───── */
-      const targetX = cannonState.targetPosition.x
-      const targetY = cannonState.targetPosition.y ?? TARGET_Y_OFFSET
+      const targetX = cannonState.targetSummary.currentTarget?.position.x ?? 0
+      const targetY =
+        cannonState.targetSummary.currentTarget?.position.y ?? TARGET_Y_OFFSET
 
       handleUpdateProjectilePath(shotId, { x: p.x, y: p.y }, p)
 
@@ -253,12 +263,12 @@ const CanvasScene = () => {
         toast.info('Target hit!', { position: 'top-center' })
         exlosionSoundRef.current?.play()
         stopSimulation()
+        handleChangeFireSummary(true)
       }
     },
     [
       cannonState.controlPannel.isAirResistance,
-      cannonState.targetPosition.x,
-      cannonState.targetPosition.y,
+      cannonState.targetSummary.currentTarget?.position,
       handleUpdateProjectilePath
     ]
   )
@@ -416,7 +426,7 @@ const CanvasScene = () => {
     scale,
     helperState.activeProjectile,
     state.controlPannel,
-    state.targetPosition
+    state.targetSummary.currentTarget
   ])
 
   const animate = useCallback(
@@ -521,15 +531,17 @@ const CanvasScene = () => {
   /* ───────────────── EFFECTS ───────────────── */
 
   useEffect(() => {
-    resizeCanvas()
-    window.addEventListener('resize', resizeCanvas)
-    draw()
+    if (state.targetSummary.currentTarget) {
+      resizeCanvas()
+      window.addEventListener('resize', resizeCanvas)
+      draw()
+    }
 
     return () => {
       window.removeEventListener('resize', resizeCanvas)
       if (animationRef.current) cancelAnimationFrame(animationRef.current)
     }
-  }, [scale, state.targetPosition])
+  }, [scale, state.targetSummary.currentTarget])
 
   useEffect(() => {
     fireSoundRef.current = new Audio('/assets/sound/cannon_fire.mp3')
@@ -558,10 +570,12 @@ const CanvasScene = () => {
   }, [state.isReset])
 
   useEffect(() => {
-    if (!state.isPlaying) {
+    if (!state.isPlaying && state.targetSummary.currentTarget) {
       draw()
     }
   }, [state.controlPannel, state.cannonSettings])
+
+  console.log('xoxo-run')
 
   /* ───────────────── RENDER ───────────────── */
 
