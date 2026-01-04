@@ -9,14 +9,18 @@ interface Props {
   children: ReactNode
 }
 
-function formatElapsed(seconds: number): string {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = seconds % 60
+function formatElapsedTime(milliseconds: number) {
+  const totalSeconds = Math.floor(milliseconds / 1000)
 
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(
-    s
-  ).padStart(2, '0')}`
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+
+  return [
+    String(hours).padStart(2, '0'),
+    String(minutes).padStart(2, '0'),
+    String(seconds).padStart(2, '0')
+  ].join(':')
 }
 
 const AppLayout = ({ children }: Props) => {
@@ -27,9 +31,7 @@ const AppLayout = ({ children }: Props) => {
   } = useCannonState()
 
   const totalTime =
-    startTime && endTime
-      ? formatElapsed(Math.floor((endTime - startTime) / 1000))
-      : '00:00:00'
+    startTime && endTime ? formatElapsedTime(endTime - startTime) : '00:00:00'
 
   return (
     <>

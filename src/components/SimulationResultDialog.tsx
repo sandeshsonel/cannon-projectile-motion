@@ -22,9 +22,9 @@ export function SimulationResultDialog({
   open,
   shots,
   accuracy,
-  targetsHit,
-  totalTime
-}: SimulationResultDialogProps) {
+  targetsHit
+}: // totalTime
+SimulationResultDialogProps) {
   return (
     <Dialog open={open}>
       <DialogContent
@@ -46,7 +46,7 @@ export function SimulationResultDialog({
         </DialogHeader>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-2 gap-3 mb-6">
           <Card className="p-2.5 flex flex-col items-center bg-slate-50 dark:bg-slate-900/50">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
               Shots Fired
@@ -65,14 +65,14 @@ export function SimulationResultDialog({
             </span>
           </Card>
 
-          <Card className="p-2.5 flex flex-col items-center bg-slate-50 dark:bg-slate-900/50">
+          {/* <Card className="p-2.5 flex flex-col items-center bg-slate-50 dark:bg-slate-900/50">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
               Total Time
             </span>
             <span className="text-lg font-mono font-bold text-green-600 dark:text-green-400">
               {totalTime}
             </span>
-          </Card>
+          </Card> */}
         </div>
 
         {/* Actions */}
