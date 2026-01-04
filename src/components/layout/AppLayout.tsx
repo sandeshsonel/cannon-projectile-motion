@@ -9,11 +9,14 @@ interface Props {
   children: ReactNode
 }
 
-function unixToTime(ts: number) {
-  const d = new Date(ts * 1000)
-  return `${String(d.getHours()).padStart(2, '0')}:${String(
-    d.getMinutes()
-  ).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`
+function formatElapsed(seconds: number): string {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = seconds % 60
+
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(
+    s
+  ).padStart(2, '0')}`
 }
 
 const AppLayout = ({ children }: Props) => {
@@ -25,7 +28,7 @@ const AppLayout = ({ children }: Props) => {
 
   const totalTime =
     startTime && endTime
-      ? unixToTime(Math.floor((endTime - startTime) / 1000))
+      ? formatElapsed(Math.floor((endTime - startTime) / 1000))
       : '00:00:00'
 
   return (
