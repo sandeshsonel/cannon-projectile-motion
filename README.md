@@ -1,6 +1,6 @@
 ## Cannon Projectile Motion – React + TS + Vite
 
-This project recreates the provided animation using React TS (Vite), Shadcn and Tailwind CSS.
+This project is built with React (TypeScript) using Vite, styled with Tailwind CSS, and utilizes shadcn/ui components.
 
 ## Tech Stack
 
