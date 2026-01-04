@@ -9,6 +9,9 @@ interface Props {
   children: ReactNode
 }
 
+const unixToTime = (ts: number) =>
+  new Date(ts * 1000).toLocaleTimeString('en-GB', { hour12: true })
+
 const AppLayout = ({ children }: Props) => {
   const {
     startTime,
@@ -17,7 +20,9 @@ const AppLayout = ({ children }: Props) => {
   } = useCannonState()
 
   const totalTime =
-    startTime && endTime ? Math.floor((endTime - startTime) / 1000) : 0
+    startTime && endTime
+      ? unixToTime(Math.floor((endTime - startTime) / 1000))
+      : '00:00:00'
 
   return (
     <>

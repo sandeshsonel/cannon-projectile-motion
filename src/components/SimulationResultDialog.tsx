@@ -8,7 +8,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { RotateCcw, Trophy } from 'lucide-react'
-import { formatTime } from '@/lib/utils'
 
 interface SimulationResultDialogProps {
   open: boolean
@@ -16,7 +15,7 @@ interface SimulationResultDialogProps {
   shots: number
   accuracy: number
   targetsHit: number
-  totalTime: number
+  totalTime: string
 }
 
 export function SimulationResultDialog({
@@ -71,7 +70,7 @@ export function SimulationResultDialog({
               Total Time
             </span>
             <span className="text-lg font-mono font-bold text-green-600 dark:text-green-400">
-              {formatTime(totalTime)}
+              {totalTime}
             </span>
           </Card>
         </div>
