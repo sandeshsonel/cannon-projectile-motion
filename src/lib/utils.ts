@@ -53,7 +53,7 @@ export function generateTargets(options?: {
     maxX = 300,
     minSpacing = 20,
     maxSpacing = 50,
-    y = 0
+    y = 4
   } = options || {}
 
   const count = randomInt(minCount, maxCount)

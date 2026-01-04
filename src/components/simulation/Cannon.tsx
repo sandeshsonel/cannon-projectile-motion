@@ -17,7 +17,8 @@ const Cannon: React.FC = () => {
   const {
     handleChangeSettings,
     handleChangePosition,
-    handleSelectCannonAngle
+    handleSelectCannonAngle,
+    handleToggleFire
   } = useCannonActions()
 
   const clampAngle = (v: number) => Math.max(-90, Math.min(0, v))
@@ -107,7 +108,10 @@ const Cannon: React.FC = () => {
       className="absolute inset-0"
       width="100%"
       height="100%"
-      onClick={() => handleSelectCannonAngle(!isAngleSelected)}>
+      onClick={() => {
+        handleToggleFire()
+      }}
+      onMouseMove={() => handleSelectCannonAngle(false)}>
       <g
         transform={`translate(${position.x}, ${position.y}) rotate(${angle})`}
         style={{ cursor: 'crosshair' }}>

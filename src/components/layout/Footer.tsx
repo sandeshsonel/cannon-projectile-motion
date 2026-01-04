@@ -171,6 +171,7 @@ const Footer = () => {
               label="Vertical"
               min={0}
               max={65}
+              // value={targetSummary?.currentTarget?.position.y ?? 0}
               value={targetSummary?.currentTarget?.position.y ?? 0}
               unit="m"
               disabled={true}
