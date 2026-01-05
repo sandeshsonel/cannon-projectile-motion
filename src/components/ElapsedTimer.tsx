@@ -1,39 +1,52 @@
 import { memo, useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Timer } from 'lucide-react'
-
 import { useCannonState } from '@/context'
 
 type ElapsedTimerProps = {
   className?: string
-  startAt?: number // seconds
 }
 
 function ElapsedTimer({ className }: ElapsedTimerProps) {
-  const timeInterval = useRef<ReturnType<typeof setInterval> | null>(null)
-  const {
-    startTime,
-    targetSummary: { isOpenSuccessModal }
-  } = useCannonState()
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const { startTime, endTime } = useCannonState()
+  const startTimeRef = useRef<number | null>(null)
+
   const [seconds, setSeconds] = useState(0)
 
   useEffect(() => {
-    if (startTime) {
-      timeInterval.current = setInterval(() => {
-        setSeconds((prev) => prev + 1)
-      }, 1000)
+    if (!startTime && !startTimeRef.current) return
+
+    startTimeRef.current = !startTimeRef.current
+      ? startTime
+      : startTimeRef.current
+
+    const update = () => {
+      const startTime = startTimeRef.current
+      if (startTime) {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000)
+        setSeconds(elapsed)
+      }
     }
 
+    update()
+
+    intervalRef.current = setInterval(update, 1000)
+
     return () => {
-      if (timeInterval.current) clearInterval(timeInterval.current)
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
     }
   }, [startTime])
 
   useEffect(() => {
-    if (isOpenSuccessModal && timeInterval.current) {
-      clearInterval(timeInterval.current)
+    if (endTime && intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
     }
-  }, [isOpenSuccessModal])
+  }, [endTime])
 
   const formatTime = (total: number) => {
     const hrs = Math.floor(total / 3600)
@@ -46,8 +59,7 @@ function ElapsedTimer({ className }: ElapsedTimerProps) {
   return (
     <div
       className={cn(
-        'absolute top-3 right-6 z-20 min-w-35 rounded-md p-4 border shadow-sm',
-        'backdrop-blur-md',
+        'absolute top-3 right-6 z-20 min-w-35 rounded-md p-4 border shadow-sm backdrop-blur-md',
         className
       )}>
       <div className="mb-2 flex items-center gap-2">

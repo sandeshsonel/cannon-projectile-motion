@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -18,13 +19,13 @@ interface SimulationResultDialogProps {
   totalTime: string
 }
 
-export function SimulationResultDialog({
+const SimulationResultDialog = ({
   open,
   shots,
   accuracy,
   targetsHit
 }: // totalTime
-SimulationResultDialogProps) {
+SimulationResultDialogProps) => {
   return (
     <Dialog open={open}>
       <DialogContent
@@ -96,3 +97,5 @@ SimulationResultDialogProps) {
     </Dialog>
   )
 }
+
+export default memo(SimulationResultDialog)

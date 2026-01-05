@@ -1,8 +1,9 @@
 import { createContext, useContext } from 'react'
-import type { ProjectilePathEntry } from '@/types'
+import type { ProjectilePathEntry, Target } from '@/types'
 
 interface CannonDerivedState {
   activeProjectile: ProjectilePathEntry | null
+  currentTarget: Target | null
 }
 
 export const CannonDerivedContext = createContext<CannonDerivedState | null>(

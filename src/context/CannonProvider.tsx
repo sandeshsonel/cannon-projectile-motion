@@ -44,7 +44,6 @@ const initialState: StateType = {
   targetSummary: {
     currentTargetIndex: 0,
     totolTargets: 0,
-    currentTarget: null,
     countTotalFire: 0,
     countTargetHit: 0,
     isOpenSuccessModal: false
@@ -123,7 +122,7 @@ export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
       handleStateChange((prev) => ({
         ...prev,
         isFired: isFire ?? !prev.isFired,
-        startTime: performance.now()
+        startTime: !prev.startTime ? new Date().getTime() : null
       }))
 
       if (isFire !== false) {
@@ -298,42 +297,40 @@ export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
     return state.projectilePaths[state.activeProjectileId]
   }, [state.activeProjectileId, state.projectilePaths])
 
-  const totalTargets = useMemo(() => {
-    return generateTargets()
-  }, [])
+  const totalTargets = useMemo(() => generateTargets(), [])
+
+  const currentTarget = useMemo(
+    () => totalTargets[state.targetSummary.currentTargetIndex] ?? null,
+    [totalTargets, state.targetSummary.currentTargetIndex]
+  )
 
   /* ─────────────── DERIVED ─────────────── */
 
   const handleChangeFireSummary = useCallback(
     (isTargetHit?: boolean) => {
-      handleStateChange((prev) => ({
-        ...prev,
-        startTime: !prev.startTime ? Date.now() : prev.startTime,
-        endTime:
-          isTargetHit &&
-          prev.targetSummary.countTargetHit + 1 === totalTargets.length
-            ? Date.now()
-            : null,
-        targetSummary: {
-          ...prev.targetSummary,
-          currentTargetIndex: isTargetHit
-            ? prev.targetSummary.currentTargetIndex + 1
-            : prev.targetSummary.currentTargetIndex,
-          countTotalFire: prev.targetSummary.countTotalFire + 1,
-          currentTarget: isTargetHit
-            ? totalTargets?.[prev.targetSummary.currentTargetIndex + 1]
-            : prev.targetSummary.currentTarget,
-          countTargetHit: isTargetHit
-            ? prev.targetSummary.countTargetHit + 1
-            : prev.targetSummary.countTargetHit,
-          isOpenSuccessModal: !!(
-            isTargetHit &&
-            prev.targetSummary.countTargetHit + 1 === totalTargets.length
-          )
+      handleStateChange((prev) => {
+        const nextHitCount = isTargetHit
+          ? prev.targetSummary.countTargetHit + 1
+          : prev.targetSummary.countTargetHit
+
+        const isCompleted = nextHitCount === totalTargets.length
+
+        return {
+          ...prev,
+          endTime: isCompleted ? Date.now() : null,
+          targetSummary: {
+            ...prev.targetSummary,
+            currentTargetIndex: isTargetHit
+              ? prev.targetSummary.currentTargetIndex + 1
+              : prev.targetSummary.currentTargetIndex,
+            countTotalFire: prev.targetSummary.countTotalFire + 1,
+            countTargetHit: nextHitCount,
+            isOpenSuccessModal: isCompleted
+          }
         }
-      }))
+      })
     },
-    [handleStateChange]
+    [handleStateChange, totalTargets]
   )
 
   useLayoutEffect(() => {
@@ -387,7 +384,8 @@ export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
   return (
     <CannonStateContext.Provider value={state}>
       <CannonActionsContext.Provider value={actions}>
-        <CannonDerivedContext.Provider value={{ activeProjectile }}>
+        <CannonDerivedContext.Provider
+          value={{ activeProjectile, currentTarget }}>
           {children}
         </CannonDerivedContext.Provider>
       </CannonActionsContext.Provider>

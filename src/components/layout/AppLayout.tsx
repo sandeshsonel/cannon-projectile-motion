@@ -1,26 +1,13 @@
 import { type ReactNode } from 'react'
+import { useCannonState } from '@/context'
 
 import Navbar from './Navbar'
 import Footer from './Footer'
-import { SimulationResultDialog } from '../SimulationResultDialog'
-import { useCannonState } from '@/context'
+import SimulationResultDialog from '../SimulationResultDialog'
+import { formatTime } from '@/lib/utils'
 
 interface Props {
   children: ReactNode
-}
-
-function formatElapsedTime(milliseconds: number) {
-  const totalSeconds = Math.floor(milliseconds / 1000)
-
-  const hours = Math.floor(totalSeconds / 3600)
-  const minutes = Math.floor((totalSeconds % 3600) / 60)
-  const seconds = totalSeconds % 60
-
-  return [
-    String(hours).padStart(2, '0'),
-    String(minutes).padStart(2, '0'),
-    String(seconds).padStart(2, '0')
-  ].join(':')
 }
 
 const AppLayout = ({ children }: Props) => {
@@ -31,7 +18,7 @@ const AppLayout = ({ children }: Props) => {
   } = useCannonState()
 
   const totalTime =
-    startTime && endTime ? formatElapsedTime(endTime - startTime) : '00:00:00'
+    startTime && endTime ? formatTime((endTime - startTime) / 1000) : '00:00:00'
 
   return (
     <>

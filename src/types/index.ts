@@ -51,7 +51,6 @@ export interface CannonContextType {
     targetSummary: {
       currentTargetIndex: number
       totolTargets: number
-      currentTarget: Target | null
       countTotalFire: number
       countTargetHit: number
       isOpenSuccessModal: boolean

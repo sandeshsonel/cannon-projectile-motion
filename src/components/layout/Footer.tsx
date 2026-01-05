@@ -18,7 +18,7 @@ const Footer = () => {
     handleToggleFire,
     handleSelectCannonAngle
   } = useCannonActions()
-  const { activeProjectile } = useCannonDerived()
+  const { activeProjectile, currentTarget } = useCannonDerived()
 
   const currentSpeed = Math.sqrt(
     (activeProjectile?.vx ?? 0) * (activeProjectile?.vx ?? 0) +
@@ -171,8 +171,7 @@ const Footer = () => {
               label="Vertical"
               min={0}
               max={65}
-              // value={targetSummary?.currentTarget?.position.y ?? 0}
-              value={targetSummary?.currentTarget?.position.y ?? 0}
+              value={currentTarget?.position.y ?? 0}
               unit="m"
               disabled={true}
               // onChange={(value: number) => handleTargetPosition('y', value)}
@@ -181,7 +180,7 @@ const Footer = () => {
               label="Horizontal"
               min={50}
               max={300}
-              value={targetSummary?.currentTarget?.position.x ?? 0}
+              value={currentTarget?.position.x ?? 0}
               unit="m"
               disabled={true}
               // onChange={(value: number) => handleTargetPosition('x', value)}

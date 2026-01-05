@@ -1,12 +1,14 @@
 import { useCannonActions, useCannonState } from '@/context'
-import React, { useEffect, useRef } from 'react'
+import React, { memo, useCallback, useEffect, useRef } from 'react'
 
-const barrelLength = 70
-const rotationSpeed = 1
-const moveSpeed = 5
+const BARREL_LENGTH = 70
+const ROTATION_SPEED = 1
+const MOVE_SPEED = 5
+
+const clampAngle = (v: number) => Math.max(-90, Math.min(0, v))
 
 const Cannon: React.FC = () => {
-  const svgRef = useRef<SVGSVGElement | null>(null)
+  const svgRef = useRef<SVGSVGElement>(null)
   const isDraggingRef = useRef(false)
   const dragOffset = useRef({ x: 0, y: 0 })
 
@@ -14,6 +16,7 @@ const Cannon: React.FC = () => {
     cannonSettings: { angle, position },
     isAngleSelected
   } = useCannonState()
+
   const {
     handleChangeSettings,
     handleChangePosition,
@@ -21,86 +24,77 @@ const Cannon: React.FC = () => {
     handleToggleFire
   } = useCannonActions()
 
-  const clampAngle = (v: number) => Math.max(-90, Math.min(0, v))
-
   /* ---------------- ROTATION ---------------- */
-  const handleMouseMove = (e: MouseEvent) => {
-    if (isAngleSelected) return
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (isAngleSelected || !svgRef.current) return
 
-    const rect = svgRef.current!.getBoundingClientRect()
-    const mx = e.clientX - rect.left
-    const my = e.clientY - rect.top
+      const rect = svgRef.current.getBoundingClientRect()
+      const dx = e.clientX - rect.left - position.x
+      const dy = e.clientY - rect.top - position.y
 
-    const dx = mx - position.x
-    const dy = my - position.y
-
-    const angle = Math.atan2(dy, dx) * (180 / Math.PI)
-    handleChangeSettings('angle', clampAngle(angle))
-  }
-
-  /* ---------------- DRAG START ---------------- */
-  // const handleMouseDown = (e: React.MouseEvent) => {
-  //   e.stopPropagation()
-  //   setIsSelected(true)
-  //   isDraggingRef.current = true
-
-  //   const rect = svgRef.current!.getBoundingClientRect()
-  //   dragOffset.current = {
-  //     x: e.clientX - rect.left - position.x,
-  //     y: e.clientY - rect.top - position.y
-  //   }
-  // }
+      const nextAngle = Math.atan2(dy, dx) * (180 / Math.PI)
+      handleChangeSettings('angle', clampAngle(nextAngle))
+    },
+    [isAngleSelected, position.x, position.y, handleChangeSettings]
+  )
 
   /* ---------------- DRAG MOVE ---------------- */
-  const handleWindowMouseMove = (e: MouseEvent) => {
-    if (!isDraggingRef.current) return
+  const handleDragMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isDraggingRef.current || !svgRef.current) return
 
-    const rect = svgRef.current!.getBoundingClientRect()
-
-    handleChangePosition({
-      x: e.clientX - rect.left - dragOffset.current.x,
-      y: e.clientY - rect.top - dragOffset.current.y
-    })
-  }
-
-  /* ---------------- DRAG END ---------------- */
-  const handleMouseUp = () => {
-    isDraggingRef.current = false
-  }
+      const rect = svgRef.current.getBoundingClientRect()
+      handleChangePosition({
+        x: e.clientX - rect.left - dragOffset.current.x,
+        y: e.clientY - rect.top - dragOffset.current.y
+      })
+    },
+    [handleChangePosition]
+  )
 
   /* ---------------- KEYBOARD ---------------- */
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
       if (!isAngleSelected) return
 
-      if (e.key === 'ArrowLeft') {
-        const xPosition = position.x - moveSpeed
-        handleChangePosition('x', xPosition)
+      switch (e.key) {
+        case 'ArrowLeft':
+          handleChangePosition('x', position.x - MOVE_SPEED)
+          break
+        case 'ArrowRight':
+          handleChangePosition('x', position.x + MOVE_SPEED)
+          break
+        case 'ArrowUp':
+          handleChangeSettings('angle', clampAngle(angle - ROTATION_SPEED))
+          break
+        case 'ArrowDown':
+          handleChangeSettings('angle', clampAngle(angle + ROTATION_SPEED))
+          break
       }
-      if (e.key === 'ArrowRight') {
-        const xPosition = position.x + moveSpeed
-        handleChangePosition('x', xPosition)
-      }
-      if (e.key === 'ArrowUp' && !isAngleSelected) {
-        handleChangeSettings('angle', clampAngle(angle - rotationSpeed))
-      }
-      if (e.key === 'ArrowDown' && !isAngleSelected) {
-        handleChangeSettings('angle', clampAngle(angle + rotationSpeed))
-      }
-    }
+    },
+    [
+      isAngleSelected,
+      angle,
+      position.x,
+      handleChangePosition,
+      handleChangeSettings
+    ]
+  )
 
+  /* ---------------- GLOBAL EVENTS ---------------- */
+  useEffect(() => {
     window.addEventListener('mousemove', handleMouseMove)
-    window.addEventListener('mousemove', handleWindowMouseMove)
-    window.addEventListener('mouseup', handleMouseUp)
+    window.addEventListener('mousemove', handleDragMove)
+    window.addEventListener('mouseup', () => (isDraggingRef.current = false))
     window.addEventListener('keydown', handleKeyDown)
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mousemove', handleWindowMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
+      window.removeEventListener('mousemove', handleDragMove)
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [angle, isAngleSelected])
+  }, [handleMouseMove, handleDragMove, handleKeyDown])
 
   return (
     <svg
@@ -108,9 +102,7 @@ const Cannon: React.FC = () => {
       className="absolute inset-0"
       width="100%"
       height="100%"
-      onClick={() => {
-        handleToggleFire()
-      }}
+      onClick={() => handleToggleFire()}
       onMouseMove={() => handleSelectCannonAngle(false)}>
       <g
         transform={`translate(${position.x}, ${position.y}) rotate(${angle})`}
@@ -119,7 +111,7 @@ const Cannon: React.FC = () => {
         <rect
           x={0}
           y={-8}
-          width={barrelLength}
+          width={BARREL_LENGTH}
           height={14}
           rx={6}
           fill="#1f2933"
@@ -129,4 +121,4 @@ const Cannon: React.FC = () => {
   )
 }
 
-export default Cannon
+export default memo(Cannon)

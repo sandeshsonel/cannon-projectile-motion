@@ -2,7 +2,12 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import Cannon from './Cannon'
-import type { CannonContextType, ControlPanelState, Projectile } from '@/types'
+import type {
+  CannonContextType,
+  ControlPanelState,
+  Projectile,
+  ProjectilePathEntry
+} from '@/types'
 import { useCannonActions, useCannonDerived, useCannonState } from '@/context'
 
 /* ───────────────── CONSTANTS ───────────────── */
@@ -47,10 +52,9 @@ const CanvasScene = () => {
     state,
     helperState
   })
+  const projectileRef = useRef<ProjectilePathEntry | null>(null)
   const applyControlSettings = useRef<Partial<ControlPanelState>>({})
   const lastTimeRef = useRef<number | null>(null)
-
-  const { state: cannonState } = stateRef.current
 
   const isProjectileHitTarget = (
     px: number,
@@ -157,11 +161,11 @@ const CanvasScene = () => {
   const drawTarget = useCallback(
     (ctx: CanvasRenderingContext2D, w: number, h: number) => {
       const x = metersToPixelsX(
-        state.targetSummary?.currentTarget?.position.x ?? 0 + 6,
+        helperState.currentTarget?.position.x ?? 0 + 6,
         w
       )
       const y = metersToPixelsY(
-        state.targetSummary?.currentTarget?.position.y ?? 0 + 4,
+        helperState.currentTarget?.position.y ?? 0 + 4,
         h
       )
 
@@ -177,7 +181,7 @@ const CanvasScene = () => {
       ctx.arc(x, y - 8, 10, 0, Math.PI * 2)
       ctx.fill()
     },
-    [state.targetSummary.currentTarget, state.targetSummary.currentTarget]
+    [helperState.currentTarget]
   )
 
   const drawProjectile = (
@@ -185,7 +189,7 @@ const CanvasScene = () => {
     w: number,
     h: number
   ) => {
-    const p = stateRef.current.helperState.activeProjectile
+    const p = projectileRef.current
     if (!p || !p.active) return
 
     // Image may not be loaded yet
@@ -206,13 +210,13 @@ const CanvasScene = () => {
       cancelAnimationFrame(animationRef.current)
       animationRef.current = null
     }
-    stateRef.current.state.isPlaying = false
     handleToogleIsPlaying(false)
   }
 
   const updateProjectile = useCallback(
     (dt: number) => {
-      const p = stateRef.current.helperState.activeProjectile
+      const { state: cannonState } = stateRef.current
+      const p = projectileRef.current
       const shotId = currentShotIdRef.current
 
       if (!p || !p.active || !shotId) return
@@ -252,23 +256,26 @@ const CanvasScene = () => {
       }
 
       /* ───── TARGET HIT ───── */
-      const targetX = cannonState.targetSummary.currentTarget?.position.x ?? 0
-      const targetY =
-        cannonState.targetSummary.currentTarget?.position.y ?? TARGET_Y_OFFSET
+      const targetX = helperState.currentTarget?.position.x ?? 0
+      const targetY = helperState.currentTarget?.position.y ?? TARGET_Y_OFFSET
 
       handleUpdateProjectilePath(shotId, { x: p.x, y: p.y }, p)
 
       if (isProjectileHitTarget(p.x, p.y, targetX, targetY, TARGET_RADIUS)) {
         p.active = false
         toast.info('Target hit!', { position: 'top-center' })
-        exlosionSoundRef.current?.play()
+        if (exlosionSoundRef.current) {
+          exlosionSoundRef.current.pause()
+          exlosionSoundRef.current.currentTime = 0
+          exlosionSoundRef.current.play()
+        }
         stopSimulation()
         handleChangeFireSummary(true)
       }
     },
     [
-      cannonState.controlPannel.isAirResistance,
-      cannonState.targetSummary.currentTarget?.position,
+      state.controlPannel.isAirResistance,
+      helperState.currentTarget?.position,
       handleUpdateProjectilePath
     ]
   )
@@ -284,6 +291,7 @@ const CanvasScene = () => {
     w: number,
     h: number
   ) => {
+    const { state: cannonState } = stateRef.current
     if (!cannonState.controlPannel.isVector) return
 
     const SCALE = 0.8 // visual scale (meters per m/s)
@@ -325,7 +333,11 @@ const CanvasScene = () => {
 
   const getCannonMuzzleWorld = useCallback(() => {
     const canvas = canvasRef.current
-    if (!canvas) return
+    if (!canvas || canvas.clientWidth === 0 || canvas.clientHeight === 0) {
+      return { x: 0, y: 0 }
+    }
+
+    const { state: cannonState } = stateRef.current
 
     const { width, height } = canvas
     const { angle, position } = cannonState.cannonSettings
@@ -343,13 +355,14 @@ const CanvasScene = () => {
     }
 
     return muzzleWorld
-  }, [cannonState.cannonSettings, pixelsToMetersX, pixelsToMetersY])
+  }, [state.cannonSettings, pixelsToMetersX, pixelsToMetersY])
 
   const drawProjectilePaths = (
     ctx: CanvasRenderingContext2D,
     w: number,
     h: number
   ) => {
+    const { state: cannonState } = stateRef.current
     if (!cannonState.controlPannel.isPath) {
       return
     }
@@ -412,11 +425,13 @@ const CanvasScene = () => {
     drawTarget(ctx, w, h)
 
     // projectile
-    if (stateRef.current.helperState.activeProjectile) drawProjectile(ctx, w, h)
-
     const p = stateRef.current.helperState.activeProjectile
-    if (p && p.active) {
-      drawVelocityVector(ctx, p.x, p.y, p.vx, p.vy, w, h)
+    if (p) {
+      drawProjectile(ctx, w, h)
+
+      if (p.active) {
+        drawVelocityVector(ctx, p.x, p.y, p.vx, p.vy, w, h)
+      }
     }
 
     ctx.restore()
@@ -424,15 +439,15 @@ const CanvasScene = () => {
     scale,
     helperState.activeProjectile,
     state.controlPannel,
-    state.targetSummary.currentTarget
+    helperState.currentTarget
   ])
 
   const animate = useCallback(
     (now: number) => {
-      const p = stateRef.current.helperState.activeProjectile
+      const p = projectileRef.current
 
-      if (!p || !p.active || !stateRef.current.state.isPlaying) {
-        if (animationRef.current !== null) {
+      if (!p || !p.active) {
+        if (animationRef.current) {
           cancelAnimationFrame(animationRef.current)
           animationRef.current = null
         }
@@ -443,7 +458,7 @@ const CanvasScene = () => {
         lastTimeRef.current = now
       }
 
-      const dt = (now - lastTimeRef.current) / 1000 // seconds
+      const dt = (now - lastTimeRef.current) / 1000
       lastTimeRef.current = now
 
       updateProjectile(dt)
@@ -477,13 +492,13 @@ const CanvasScene = () => {
     }
 
     /* ───── SET STATE (NO RERENDER) ───── */
-    stateRef.current.helperState.activeProjectile = {
+    projectileRef.current = {
       ...projectile,
       paths: []
     }
 
-    stateRef.current.state.isPlaying = true
     currentShotIdRef.current = fireId
+    handleToogleIsPlaying(true)
 
     handleAddProjectilePath(fireId, {
       ...projectile,
@@ -502,11 +517,14 @@ const CanvasScene = () => {
     animationRef.current = requestAnimationFrame(animate)
 
     /* ───── SOUND ───── */
-    fireSoundRef.current?.pause()
-    fireSoundRef.current!.currentTime = 0
-    fireSoundRef.current?.play()
-
-    exlosionSoundRef.current!.currentTime = 0
+    if (fireSoundRef.current) {
+      fireSoundRef.current.pause()
+      fireSoundRef.current.currentTime = 0
+      fireSoundRef.current.play()
+    }
+    if (exlosionSoundRef.current) {
+      exlosionSoundRef.current!.currentTime = 0
+    }
   }, [
     animate,
     state.cannonSettings,
@@ -526,20 +544,55 @@ const CanvasScene = () => {
     draw()
   }
 
+  const cleanupScene = useCallback(() => {
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current)
+      animationRef.current = null
+    }
+
+    lastTimeRef.current = null
+    currentShotIdRef.current = null
+
+    if (fireSoundRef.current) {
+      fireSoundRef.current.pause()
+      fireSoundRef.current.src = ''
+      fireSoundRef.current = null
+    }
+
+    if (exlosionSoundRef.current) {
+      exlosionSoundRef.current.pause()
+      exlosionSoundRef.current.src = ''
+      exlosionSoundRef.current = null
+    }
+
+    window.removeEventListener('resize', resizeCanvas)
+
+    const canvas = canvasRef.current
+    if (canvas) {
+      const ctx = canvas.getContext('2d')
+      ctx?.clearRect(0, 0, canvas.width, canvas.height)
+    }
+
+    projectileRef.current = null
+  }, [])
+
   /* ───────────────── EFFECTS ───────────────── */
 
   useEffect(() => {
-    if (state.targetSummary.currentTarget) {
-      resizeCanvas()
-      window.addEventListener('resize', resizeCanvas)
-      draw()
-    }
+    resizeCanvas()
+    window.addEventListener('resize', resizeCanvas)
+    draw()
 
     return () => {
       window.removeEventListener('resize', resizeCanvas)
-      if (animationRef.current) cancelAnimationFrame(animationRef.current)
     }
-  }, [scale, state.targetSummary.currentTarget])
+  }, [])
+
+  useEffect(() => {
+    if (helperState.currentTarget) {
+      draw()
+    }
+  }, [draw, helperState.currentTarget])
 
   useEffect(() => {
     fireSoundRef.current = new Audio('/assets/sound/cannon_fire.mp3')
@@ -568,10 +621,20 @@ const CanvasScene = () => {
   }, [state.isReset])
 
   useEffect(() => {
-    if (!state.isPlaying && state.targetSummary.currentTarget) {
+    if (!state.isPlaying && helperState.currentTarget) {
       draw()
     }
-  }, [state.controlPannel, state.cannonSettings])
+  }, [
+    draw,
+    state.controlPannel,
+    state.cannonSettings,
+    helperState.currentTarget,
+    state.isPlaying
+  ])
+
+  useEffect(() => {
+    return () => cleanupScene()
+  }, [])
 
   /* ───────────────── RENDER ───────────────── */
 
