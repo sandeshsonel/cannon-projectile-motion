@@ -12,13 +12,15 @@ interface Props {
 
 const AppLayout = ({ children }: Props) => {
   const {
-    startTime,
     endTime,
     targetSummary: { isOpenSuccessModal, countTargetHit, countTotalFire }
   } = useCannonState()
+  const startTime = sessionStorage.getItem('startTime')
 
   const totalTime =
-    startTime && endTime ? formatTime((endTime - startTime) / 1000) : '00:00:00'
+    startTime && endTime
+      ? formatTime((endTime - parseInt(startTime)) / 1000)
+      : '00:00:00'
 
   return (
     <>

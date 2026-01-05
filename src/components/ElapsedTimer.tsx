@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from 'react'
-import { cn } from '@/lib/utils'
+import { cn, formatTime } from '@/lib/utils'
 import { Timer } from 'lucide-react'
 import { useCannonState } from '@/context'
 
@@ -9,29 +9,38 @@ type ElapsedTimerProps = {
 
 function ElapsedTimer({ className }: ElapsedTimerProps) {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const { startTime, endTime } = useCannonState()
+  const { endTime, isReset } = useCannonState()
   const startTimeRef = useRef<number | null>(null)
-
+  const startTime = sessionStorage.getItem('startTime')
   const [seconds, setSeconds] = useState(0)
 
+  const handleResetTime = () => {
+    setSeconds(0)
+    startTimeRef.current = null
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+  }
+
   useEffect(() => {
-    if (!startTime && !startTimeRef.current) return
+    if ((!startTime && !startTimeRef.current) || endTime) return
 
     startTimeRef.current = !startTimeRef.current
-      ? startTime
+      ? parseInt(startTime || '')
       : startTimeRef.current
 
     const update = () => {
       const startTime = startTimeRef.current
       if (startTime) {
-        const elapsed = Math.floor((Date.now() - startTime) / 1000)
+        const elapsed = (Date.now() - startTime) / 1000
         setSeconds(elapsed)
       }
     }
 
     update()
 
-    intervalRef.current = setInterval(update, 1000)
+    intervalRef.current = setInterval(update, 50)
 
     return () => {
       if (intervalRef.current) {
@@ -39,22 +48,28 @@ function ElapsedTimer({ className }: ElapsedTimerProps) {
         intervalRef.current = null
       }
     }
-  }, [startTime])
+  }, [startTime, endTime])
 
   useEffect(() => {
-    if (endTime && intervalRef.current) {
-      clearInterval(intervalRef.current)
-      intervalRef.current = null
+    if (endTime && startTime) {
+      setTimeout(() => {
+        setSeconds((endTime - parseInt(startTime)) / 1000)
+      }, 0)
     }
+    startTimeRef.current = null
+    if (intervalRef.current) clearInterval(intervalRef.current)
+    intervalRef.current = null
   }, [endTime])
 
-  const formatTime = (total: number) => {
-    const hrs = Math.floor(total / 3600)
-    const mins = Math.floor((total % 3600) / 60)
-    const secs = total % 60
+  useEffect(() => {
+    if (isReset) {
+      const timeoutId = setTimeout(() => {
+        handleResetTime()
+      }, 0)
 
-    return [hrs, mins, secs].map((v) => String(v).padStart(2, '0')).join(':')
-  }
+      return () => clearTimeout(timeoutId)
+    }
+  }, [isReset])
 
   return (
     <div

@@ -39,7 +39,7 @@ const initialState: StateType = {
   endTime: null,
   isRestart: false,
   isContinue: false,
-  isReset: true,
+  isReset: false,
   isAngleSelected: false,
   targetSummary: {
     currentTargetIndex: 0,
@@ -106,7 +106,11 @@ export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
 
   const handleReset = useCallback(() => {
     setState({ ...initialState, isReset: true })
-  }, [])
+    sessionStorage.removeItem('startTime')
+    setTimeout(() => {
+      handleStateChange('isReset', false)
+    }, 200)
+  }, [handleStateChange])
 
   const handleRestartProjectile = useCallback(() => {
     handleStateChange((prev) => ({
@@ -119,6 +123,10 @@ export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
 
   const handleToggleFire = useCallback(
     (isFire?: boolean) => {
+      const startTime = sessionStorage.getItem('startTime')
+      if (!startTime) {
+        sessionStorage.setItem('startTime', new Date().getTime().toString())
+      }
       handleStateChange((prev) => ({
         ...prev,
         isFired: isFire ?? !prev.isFired,
@@ -338,6 +346,7 @@ export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
       handleSetCurrentTarget(totalTargets)
     }, 0)
     return () => {
+      sessionStorage.removeItem('startTime')
       clearTimeout(timeout)
     }
   }, [])

@@ -3,7 +3,11 @@ import { Github, RotateCcw } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 
+import { useCannonActions } from '@/context'
+
 const Navbar = () => {
+  const { handleReset } = useCannonActions()
+
   const handleNavigate = () => {
     window.open(import.meta.env.VITE_APP_GITHUB_URL, '_blank')
   }
@@ -15,7 +19,7 @@ const Navbar = () => {
 
       <div className="flex gap-2">
         <Button
-          onClick={() => window.location.reload()}
+          onClick={handleReset}
           variant="ghost"
           size="icon"
           className="cursor-pointer">

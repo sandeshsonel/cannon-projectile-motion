@@ -263,7 +263,7 @@ const CanvasScene = () => {
 
       if (isProjectileHitTarget(p.x, p.y, targetX, targetY, TARGET_RADIUS)) {
         p.active = false
-        toast.info('Target hit!', { position: 'top-center' })
+        toast.info('Target hit!', { position: 'top-center', duration: 1200 })
         if (exlosionSoundRef.current) {
           exlosionSoundRef.current.pause()
           exlosionSoundRef.current.currentTime = 0
@@ -524,6 +524,7 @@ const CanvasScene = () => {
     }
     if (exlosionSoundRef.current) {
       exlosionSoundRef.current!.currentTime = 0
+      exlosionSoundRef.current!.pause()
     }
   }, [
     animate,
@@ -534,54 +535,57 @@ const CanvasScene = () => {
     handleRemoveProjectilePathById
   ])
 
-  const handleReset = () => {
+  const cleanupScene = useCallback((isCleanAll: boolean = true) => {
+    lastTimeRef.current = null
+    currentShotIdRef.current = null
+    projectileRef.current = null
+
+    if (isCleanAll) {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current)
+        animationRef.current = null
+      }
+      if (fireSoundRef.current) {
+        fireSoundRef.current.pause()
+        fireSoundRef.current.src = ''
+        fireSoundRef.current = null
+      }
+
+      if (exlosionSoundRef.current) {
+        exlosionSoundRef.current.pause()
+        exlosionSoundRef.current.src = ''
+        exlosionSoundRef.current = null
+      }
+
+      window.removeEventListener('resize', resizeCanvas)
+
+      const canvas = canvasRef.current
+      if (canvas) {
+        const ctx = canvas.getContext('2d')
+        ctx?.clearRect(0, 0, canvas.width, canvas.height)
+      }
+    }
+  }, [])
+
+  const initiateCanvas = () => {
+    resizeCanvas()
+    draw()
+    window.addEventListener('resize', resizeCanvas)
+  }
+
+  const handleReset = useCallback(() => {
     stateRef.current = {
       state,
       helperState
     }
-    currentShotIdRef.current = null
-    if (animationRef.current) cancelAnimationFrame(animationRef.current)
-    draw()
-  }
-
-  const cleanupScene = useCallback(() => {
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current)
-      animationRef.current = null
-    }
-
-    lastTimeRef.current = null
-    currentShotIdRef.current = null
-
-    if (fireSoundRef.current) {
-      fireSoundRef.current.pause()
-      fireSoundRef.current.src = ''
-      fireSoundRef.current = null
-    }
-
-    if (exlosionSoundRef.current) {
-      exlosionSoundRef.current.pause()
-      exlosionSoundRef.current.src = ''
-      exlosionSoundRef.current = null
-    }
-
-    window.removeEventListener('resize', resizeCanvas)
-
-    const canvas = canvasRef.current
-    if (canvas) {
-      const ctx = canvas.getContext('2d')
-      ctx?.clearRect(0, 0, canvas.width, canvas.height)
-    }
-
-    projectileRef.current = null
-  }, [])
+    cleanupScene(false)
+    initiateCanvas()
+  }, [state])
 
   /* ───────────────── EFFECTS ───────────────── */
 
   useEffect(() => {
-    resizeCanvas()
-    window.addEventListener('resize', resizeCanvas)
-    draw()
+    initiateCanvas()
 
     return () => {
       window.removeEventListener('resize', resizeCanvas)

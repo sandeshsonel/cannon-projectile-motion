@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { RotateCcw, Trophy } from 'lucide-react'
+import { useCannonActions } from '@/context'
 
 interface SimulationResultDialogProps {
   open: boolean
@@ -23,9 +24,10 @@ const SimulationResultDialog = ({
   open,
   shots,
   accuracy,
-  targetsHit
-}: // totalTime
-SimulationResultDialogProps) => {
+  targetsHit,
+  totalTime
+}: SimulationResultDialogProps) => {
+  const { handleReset } = useCannonActions()
   return (
     <Dialog open={open}>
       <DialogContent
@@ -47,7 +49,7 @@ SimulationResultDialogProps) => {
         </DialogHeader>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className="grid grid-cols-3 gap-3 mb-6">
           <Card className="p-2.5 flex flex-col items-center bg-slate-50 dark:bg-slate-900/50">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
               Shots Fired
@@ -66,21 +68,21 @@ SimulationResultDialogProps) => {
             </span>
           </Card>
 
-          {/* <Card className="p-2.5 flex flex-col items-center bg-slate-50 dark:bg-slate-900/50">
+          <Card className="p-2.5 flex flex-col items-center bg-slate-50 dark:bg-slate-900/50">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
               Total Time
             </span>
             <span className="text-lg font-mono font-bold text-green-600 dark:text-green-400">
               {totalTime}
             </span>
-          </Card> */}
+          </Card>
         </div>
 
         {/* Actions */}
         <div className="flex flex-col gap-2.5">
           <Button
             className="w-full gap-2 font-bold shadow-lg shadow-red-500/20 cursor-pointer"
-            onClick={() => window.location.reload()}>
+            onClick={handleReset}>
             <RotateCcw className="h-4 w-4" />
             Restart Simulation
           </Button>

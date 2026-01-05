@@ -314,7 +314,7 @@ const Range = ({
     </div>
     <Slider
       disabled={disabled}
-      defaultValue={[value]}
+      value={[value]}
       min={min}
       max={max}
       step={1}
