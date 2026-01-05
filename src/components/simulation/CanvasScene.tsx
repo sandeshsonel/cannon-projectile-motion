@@ -388,8 +388,6 @@ const CanvasScene = () => {
 
     const { controlPannel } = stateRef.current.state
 
-    console.log('xoxo-call', { controlPannel })
-
     const ctx = canvas.getContext('2d')!
     const w = canvas.clientWidth
     const h = canvas.clientHeight
@@ -574,8 +572,6 @@ const CanvasScene = () => {
       draw()
     }
   }, [state.controlPannel, state.cannonSettings])
-
-  console.log('xoxo-run')
 
   /* ───────────────── RENDER ───────────────── */
 
