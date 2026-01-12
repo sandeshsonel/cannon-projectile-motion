@@ -12,7 +12,7 @@ import type {
 import { CannonStateContext } from './CannonStateContext'
 import { CannonActionsContext } from './CannonActionsContext'
 import { CannonDerivedContext } from './CannonDerivedContext'
-import { generateTargets } from '@/lib/utils'
+import { createTargetsFromConfig } from '@/lib/utils'
 
 type StateType = CannonContextType['state']
 
@@ -305,7 +305,7 @@ export const CannonProvider = ({ children }: { children: React.ReactNode }) => {
     return state.projectilePaths[state.activeProjectileId]
   }, [state.activeProjectileId, state.projectilePaths])
 
-  const totalTargets = useMemo(() => generateTargets(), [])
+  const totalTargets = useMemo(() => createTargetsFromConfig(), [])
 
   const currentTarget = useMemo(
     () => totalTargets[state.targetSummary.currentTargetIndex] ?? null,

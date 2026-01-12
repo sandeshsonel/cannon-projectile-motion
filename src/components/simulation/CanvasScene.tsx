@@ -54,7 +54,6 @@ const CanvasScene = () => {
   const projectileRef = useRef<ProjectilePathEntry | null>(null)
   const applyControlSettings = useRef<Partial<ControlPanelState>>({})
   const lastTimeRef = useRef<number | null>(null)
-  const isDrawRef = useRef(false)
 
   const controlPannelRef = useRef<
     Pick<CannonContextType['state']['controlPannel'], keyof ControlPanelState>
@@ -274,6 +273,7 @@ const CanvasScene = () => {
 
       if (isProjectileHitTarget(p.x, p.y, targetX, targetY, TARGET_RADIUS)) {
         p.active = false
+
         toast.info('Target hit!', { position: 'top-center', duration: 1200 })
         if (exlosionSoundRef.current) {
           exlosionSoundRef.current.pause()
@@ -610,9 +610,13 @@ const CanvasScene = () => {
   }, [state.isReset])
 
   useEffect(() => {
-    if (helperState.currentTarget && !isDrawRef.current) {
+    const isUpdate =
+      JSON.stringify(helperState.currentTarget) !==
+      JSON.stringify(currentTargetRef.current)
+
+    if (isUpdate && helperState.currentTarget) {
+      currentTargetRef.current = helperState.currentTarget
       draw()
-      isDrawRef.current = true
     }
   }, [draw, helperState.currentTarget])
 

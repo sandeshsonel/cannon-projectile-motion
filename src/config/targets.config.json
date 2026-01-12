@@ -1,0 +1,15 @@
+{
+  "count": {
+    "min": 4,
+    "max": 8
+  },
+  "xRange": {
+    "min": 60,
+    "max": 340
+  },
+  "spacing": {
+    "min": 24,
+    "max": 48
+  },
+  "y": 4
+}

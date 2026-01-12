@@ -100,3 +100,19 @@ export type Target = {
     y: number
   }
 }
+
+export interface TargetGeneratorConfig {
+  count: {
+    min: number
+    max: number
+  }
+  xRange: {
+    min: number
+    max: number
+  }
+  spacing: {
+    min: number
+    max: number
+  }
+  y: number
+}

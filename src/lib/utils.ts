@@ -1,6 +1,8 @@
-import type { Target } from '@/types'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+
+import type { Target } from '@/types'
+import { TARGET_CONFIG } from '@/config'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -72,4 +74,16 @@ export function generateTargets(options?: {
   }
 
   return targets
+}
+
+export function createTargetsFromConfig() {
+  return generateTargets({
+    minCount: TARGET_CONFIG.count.min,
+    maxCount: TARGET_CONFIG.count.max,
+    minX: TARGET_CONFIG.xRange.min,
+    maxX: TARGET_CONFIG.xRange.max,
+    minSpacing: TARGET_CONFIG.spacing.min,
+    maxSpacing: TARGET_CONFIG.spacing.max,
+    y: TARGET_CONFIG.y
+  })
 }
