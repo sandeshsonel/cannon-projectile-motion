@@ -5,7 +5,7 @@ export type ControlPanelState = {
   isAirResistance: boolean
 }
 
-type CannonSettingsType = {
+export type CannonSettingsType = {
   speed: number
   angle: number
   position: { x: number; y: number }

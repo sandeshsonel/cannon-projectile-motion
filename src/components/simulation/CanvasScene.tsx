@@ -4,9 +4,11 @@ import { toast } from 'sonner'
 import Cannon from './Cannon'
 import type {
   CannonContextType,
+  CannonSettingsType,
   ControlPanelState,
   Projectile,
-  ProjectilePathEntry
+  ProjectilePathEntry,
+  Target
 } from '@/types'
 import { useCannonActions, useCannonDerived, useCannonState } from '@/context'
 
@@ -38,6 +40,7 @@ const CanvasScene = () => {
     handleRemoveProjectilePathById,
     handleChangeFireSummary
   } = useCannonActions()
+
   const state = useCannonState()
   const helperState = useCannonDerived()
 
@@ -48,13 +51,17 @@ const CanvasScene = () => {
   const exlosionSoundRef = useRef<HTMLAudioElement | null>(null)
   const currentShotIdRef = useRef<string | null>(null)
   const [scale] = useState(1)
-  const stateRef = useRef<Pick<CannonContextType, 'state' | 'helperState'>>({
-    state,
-    helperState
-  })
   const projectileRef = useRef<ProjectilePathEntry | null>(null)
   const applyControlSettings = useRef<Partial<ControlPanelState>>({})
   const lastTimeRef = useRef<number | null>(null)
+
+  const controlPannelRef = useRef<
+    Pick<CannonContextType['state']['controlPannel'], keyof ControlPanelState>
+  >(state.controlPannel)
+  const cannonSettingsRef = useRef<
+    Pick<CannonContextType['state']['cannonSettings'], keyof CannonSettingsType>
+  >(state.cannonSettings)
+  const currentTargetRef = useRef<Target | null>(helperState.currentTarget)
 
   const isProjectileHitTarget = (
     px: number,
@@ -160,14 +167,9 @@ const CanvasScene = () => {
 
   const drawTarget = useCallback(
     (ctx: CanvasRenderingContext2D, w: number, h: number) => {
-      const x = metersToPixelsX(
-        helperState.currentTarget?.position.x ?? 0 + 6,
-        w
-      )
-      const y = metersToPixelsY(
-        helperState.currentTarget?.position.y ?? 0 + 4,
-        h
-      )
+      const currentTarget = currentTargetRef.current
+      const x = metersToPixelsX(currentTarget?.position.x ?? 0 + 6, w)
+      const y = metersToPixelsY(currentTarget?.position.y ?? 0 + 4, h)
 
       ctx.strokeStyle = '#2563eb'
       ctx.lineWidth = 6
@@ -181,7 +183,7 @@ const CanvasScene = () => {
       ctx.arc(x, y - 8, 10, 0, Math.PI * 2)
       ctx.fill()
     },
-    [helperState.currentTarget]
+    []
   )
 
   const drawProjectile = (
@@ -215,7 +217,6 @@ const CanvasScene = () => {
 
   const updateProjectile = useCallback(
     (dt: number) => {
-      const { state: cannonState } = stateRef.current
       const p = projectileRef.current
       const shotId = currentShotIdRef.current
 
@@ -229,7 +230,7 @@ const CanvasScene = () => {
       let ax = 0
       let ay = GRAVITY
 
-      if (cannonState.controlPannel.isAirResistance && speed > 0) {
+      if (controlPannelRef.current.isAirResistance && speed > 0) {
         const drag = AIR_RESISTANCE * speedSq
         const invSpeed = 1 / speed
 
@@ -255,9 +256,18 @@ const CanvasScene = () => {
         return
       }
 
+      if (p.y > 100 || p.x > 360) {
+        p.active = false
+        handleChangeFireSummary()
+        stopSimulation()
+        toast.info('Out of range!', { position: 'top-center', duration: 1200 })
+        return
+      }
+
       /* ───── TARGET HIT ───── */
-      const targetX = helperState.currentTarget?.position.x ?? 0
-      const targetY = helperState.currentTarget?.position.y ?? TARGET_Y_OFFSET
+      const currentTarget = currentTargetRef.current
+      const targetX = currentTarget?.position.x ?? 0
+      const targetY = currentTarget?.position.y ?? TARGET_Y_OFFSET
 
       handleUpdateProjectilePath(shotId, { x: p.x, y: p.y }, p)
 
@@ -273,11 +283,7 @@ const CanvasScene = () => {
         handleChangeFireSummary(true)
       }
     },
-    [
-      state.controlPannel.isAirResistance,
-      helperState.currentTarget?.position,
-      handleUpdateProjectilePath
-    ]
+    [handleUpdateProjectilePath, handleChangeFireSummary]
   )
 
   /* ───────────────── ANIMATION ───────────────── */
@@ -291,8 +297,7 @@ const CanvasScene = () => {
     w: number,
     h: number
   ) => {
-    const { state: cannonState } = stateRef.current
-    if (!cannonState.controlPannel.isVector) return
+    if (!controlPannelRef.current.isVector) return
 
     const SCALE = 0.8 // visual scale (meters per m/s)
 
@@ -337,10 +342,8 @@ const CanvasScene = () => {
       return { x: 0, y: 0 }
     }
 
-    const { state: cannonState } = stateRef.current
-
     const { width, height } = canvas
-    const { angle, position } = cannonState.cannonSettings
+    const { angle, position } = cannonSettingsRef.current
 
     const angleRad = (angle * Math.PI) / 180
     const cos = Math.cos(angleRad)
@@ -355,18 +358,18 @@ const CanvasScene = () => {
     }
 
     return muzzleWorld
-  }, [state.cannonSettings, pixelsToMetersX, pixelsToMetersY])
+  }, [pixelsToMetersX, pixelsToMetersY])
 
   const drawProjectilePaths = (
     ctx: CanvasRenderingContext2D,
     w: number,
     h: number
   ) => {
-    const { state: cannonState } = stateRef.current
-    if (!cannonState.controlPannel.isPath) {
+    if (!controlPannelRef.current.isPath) {
       return
     }
-    const paths = stateRef.current.state.projectilePaths
+
+    const paths = state.projectilePaths
     if (Object.keys(paths ?? {}).length > 0) {
       Object.values(paths).forEach((path, index) => {
         if (path.paths.length < 2) return
@@ -399,8 +402,6 @@ const CanvasScene = () => {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    const { controlPannel } = stateRef.current.state
-
     const ctx = canvas.getContext('2d')!
     const w = canvas.clientWidth
     const h = canvas.clientHeight
@@ -409,7 +410,7 @@ const CanvasScene = () => {
     ctx.save()
     ctx.scale(scale, scale)
 
-    if (controlPannel.isGrid) {
+    if (controlPannelRef.current.isGrid) {
       drawGrid(ctx, w, h)
     } else {
       applyControlSettings.current.isGrid = false
@@ -418,14 +419,14 @@ const CanvasScene = () => {
     drawAxes(ctx, w, h)
 
     // actual path (past)
-    if (controlPannel.isPath) {
+    if (controlPannelRef.current.isPath) {
       drawProjectilePaths(ctx, w, h)
     }
 
     drawTarget(ctx, w, h)
 
     // projectile
-    const p = stateRef.current.helperState.activeProjectile
+    const p = projectileRef.current
     if (p) {
       drawProjectile(ctx, w, h)
 
@@ -470,10 +471,10 @@ const CanvasScene = () => {
   )
 
   const fire = useCallback(() => {
-    const { cannonSettings } = stateRef.current.state
+    const cannonSettings = cannonSettingsRef.current
 
     /* ───── REMOVE PREVIOUS SHOT ───── */
-    if (stateRef.current.state.isPlaying && currentShotIdRef.current) {
+    if (state.isPlaying && currentShotIdRef.current) {
       handleRemoveProjectilePathById(currentShotIdRef.current)
     }
 
@@ -528,11 +529,11 @@ const CanvasScene = () => {
     }
   }, [
     animate,
-    state.cannonSettings,
-    state.controlPannel,
+    state.isPlaying,
     getCannonMuzzleWorld,
     handleAddProjectilePath,
-    handleRemoveProjectilePathById
+    handleRemoveProjectilePathById,
+    handleToogleIsPlaying
   ])
 
   const cleanupScene = useCallback((isCleanAll: boolean = true) => {
@@ -574,13 +575,9 @@ const CanvasScene = () => {
   }
 
   const handleReset = useCallback(() => {
-    stateRef.current = {
-      state,
-      helperState
-    }
     cleanupScene(false)
     initiateCanvas()
-  }, [state])
+  }, [])
 
   /* ───────────────── EFFECTS ───────────────── */
 
@@ -606,17 +603,10 @@ const CanvasScene = () => {
   }, [])
 
   useEffect(() => {
-    stateRef.current = {
-      state,
-      helperState
-    }
-  }, [state, helperState])
-
-  useEffect(() => {
-    if (state.isFired) {
+    if (state.isFired && !state.isPlaying) {
       fire()
     }
-  }, [state.isFired])
+  }, [state.isFired, fire, state.isPlaying])
 
   useEffect(() => {
     if (state.isReset) {
@@ -628,16 +618,26 @@ const CanvasScene = () => {
     if (!state.isPlaying && helperState.currentTarget) {
       draw()
     }
-  }, [
-    draw,
-    state.controlPannel,
-    state.cannonSettings,
-    helperState.currentTarget,
-    state.isPlaying
-  ])
+  }, [draw, state.isPlaying])
 
   useEffect(() => {
-    return () => cleanupScene()
+    controlPannelRef.current = state.controlPannel
+  }, [state.controlPannel])
+
+  useEffect(() => {
+    cannonSettingsRef.current = state.cannonSettings
+  }, [state.cannonSettings])
+
+  useEffect(() => {
+    currentTargetRef.current = helperState.currentTarget
+  }, [helperState.currentTarget])
+
+  useEffect(() => {
+    return () => {
+      if (projectileRef.current) {
+        cleanupScene()
+      }
+    }
   }, [])
 
   /* ───────────────── RENDER ───────────────── */
