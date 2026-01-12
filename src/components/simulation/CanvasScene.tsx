@@ -54,6 +54,7 @@ const CanvasScene = () => {
   const projectileRef = useRef<ProjectilePathEntry | null>(null)
   const applyControlSettings = useRef<Partial<ControlPanelState>>({})
   const lastTimeRef = useRef<number | null>(null)
+  const isDrawRef = useRef(false)
 
   const controlPannelRef = useRef<
     Pick<CannonContextType['state']['controlPannel'], keyof ControlPanelState>
@@ -590,12 +591,6 @@ const CanvasScene = () => {
   }, [])
 
   useEffect(() => {
-    if (helperState.currentTarget) {
-      draw()
-    }
-  }, [draw, helperState.currentTarget])
-
-  useEffect(() => {
     fireSoundRef.current = new Audio('/assets/sound/cannon_fire.mp3')
     fireSoundRef.current.volume = 0.5
     exlosionSoundRef.current = new Audio('/assets/sound/exlosion.mp3')
@@ -615,10 +610,11 @@ const CanvasScene = () => {
   }, [state.isReset])
 
   useEffect(() => {
-    if (!state.isPlaying && helperState.currentTarget) {
+    if (helperState.currentTarget && !isDrawRef.current) {
       draw()
+      isDrawRef.current = true
     }
-  }, [draw, state.isPlaying])
+  }, [draw, helperState.currentTarget])
 
   useEffect(() => {
     controlPannelRef.current = state.controlPannel
